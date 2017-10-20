@@ -112,6 +112,8 @@ namespace Kratos
 		void   Set_threshold(double af, int cont) { mThresholds[cont] = af; }
 		double Get_threshold(int cont) { return mThresholds[cont]; }
 
+		double* GetThresholds() { return mThresholds; }
+
 		void   Set_threshold(double af) { mThreshold = af; }
 		double Get_threshold() { return mThreshold; }
 
@@ -155,6 +157,7 @@ namespace Kratos
 		// Characteristic length Calculations
 		void   Set_l_char(double af, int cont) { mL_char[cont] = af; }
 		double Get_l_char(int cont) { return mL_char[cont]; }
+		double CalculateLchar(AleCornVelElement* CurrentElement, Element NeibElement, int cont);
 
 		void   SetJ(double af) { mJac = af; }
 		double GetJ() { return mJac; }

@@ -116,6 +116,7 @@ namespace Kratos
 			}
 
 		this->ResetNonConvergedVars();
+		this->SetToZeroIteration();
 
 	}
 
@@ -123,7 +124,7 @@ namespace Kratos
 	{
 		//*****************************
 		KRATOS_TRY
-
+		//KRATOS_WATCH(rCurrentProcessInfo[IS_DYNAMIC])
 		//1.-Initialize sizes for the system components:
 		const unsigned int number_of_nodes = GetGeometry().size();
 		const unsigned int dimension = GetGeometry().WorkingSpaceDimension();
@@ -293,51 +294,23 @@ namespace Kratos
 				this->AverageVector(AverageStress, Stress1, Stress2);
 				this->AverageVector(AverageStrain, Strain1, Strain2);
 
-				//if (this->GetIteration() < 3) // Computes the l_char on each side only once
-				//{
-					Geometry< Node < 3 > >& NodesElem1 = this->GetGeometry();  // 3 nodes of the Element 1
-					Geometry< Node < 3 > >& NodesElem2 = elem_neigb[cont].GetGeometry();  // "         " 2
-					Vector Xcoord, Ycoord;
-					Xcoord.resize(3);
-					Ycoord.resize(3);
+				if (this->GetIteration() < 3) // Computes the l_char on each side only once at each time step
+				{
+					this->CalculateLchar(this, elem_neigb[cont], cont);
+				}
+				
+				double l_char = this->Get_l_char(cont);
 
-					// Let's find the two shared nodes between the 2 elements 
-					int aux = 0;
-					double l_char = 0;
-					for (int cont = 0; cont < 3; cont++)
-					{
-						for (int cont2 = 0; cont2 < 3; cont2++)
-						{
-							if (NodesElem1[cont].Id() == NodesElem2[cont2].Id())
-							{
-								Xcoord[aux] = NodesElem1[cont].X();
-								Ycoord[aux] = NodesElem1[cont].Y();
-								aux++;                              // aux > 3 if the two elements are the same one (in fact aux == 9)
-							}
-						}
-					} // End finding nodes
+				// In case we have remeshed
+				double* thresholds = this->GetThresholds();
+				//if ()
+				//KRATOS_WATCH(*thresholds)
 
-					if (aux < 2) { std::cout << " Something wrong with the elements " << std::endl; }        // Must have at least 2 shared nodes
-					double length = 0;
-
-					// Computation of the l_char
-					if (aux < 3) {                                                                           // It is not an edge element --> The 2 elements are not equal
-						length = pow((pow(Xcoord[0] - Xcoord[1], 2) + pow(Ycoord[0] - Ycoord[1], 2)), 0.5);  // Length of the edge between 2 elements
-						l_char = length;                                                                     // Currently the characteristic length is the edge length (can be modified)
-					}
-					else {  // Edge Element
-						double ElementArea = elem_neigb[cont].GetGeometry().Area();
-						l_char = sqrt(4 * ElementArea / sqrt(3));   // Cervera's Formula
-					} // l_char computed
-
-					this->Set_l_char(l_char, cont);  // Storages the l_char of this side
-					//this->IterationPlus();
-				//}
-				//l_char = this->Get_l_char(cont);
 				this->IntegrateStressDamageMechanics(IntegratedStressVector, damagee, AverageStrain, AverageStress, cont, l_char);
 				damage[cont] = damagee;
 				this->Set_NonConvergeddamages(damagee, cont);
-			}
+
+			} // Loop Over Edges
 
 			Vector TwoMaxDamages;
 			TwoMaxDamages.resize(2);
@@ -619,11 +592,6 @@ namespace Kratos
 			}
 
 		}
-
-
-
-
-
 		/*if (rVariable == SMOOTHED_STRESS_VECTOR)
 		{
 			rValues[0] = this->GetValue(SMOOTHED_STRESS_VECTOR);
@@ -740,6 +708,51 @@ namespace Kratos
 		KRATOS_CATCH("")
 		
 	}
+
+	double AleCornVelElement::CalculateLchar(AleCornVelElement* CurrentElement, Element NeibElement, int cont)
+	{
+		Geometry< Node < 3 > >& NodesElem1 = CurrentElement->GetGeometry();  // 3 nodes of the Element 1
+		Geometry< Node < 3 > >& NodesElem2 = NeibElement.GetGeometry();  // "         " 2
+		Vector Xcoord, Ycoord;
+		Xcoord.resize(3);
+		Ycoord.resize(3);
+
+		// Let's find the two shared nodes between the 2 elements 
+		int aux = 0;
+		double l_char = 0;
+		for (int cont = 0; cont < 3; cont++)
+		{
+			for (int cont2 = 0; cont2 < 3; cont2++)
+			{
+				if (NodesElem1[cont].Id() == NodesElem2[cont2].Id())
+				{
+					Xcoord[aux] = NodesElem1[cont].X();
+					Ycoord[aux] = NodesElem1[cont].Y();
+					aux++;                              // aux > 3 if the two elements are the same one (in fact aux == 9)
+				}
+			}
+		} // End finding nodes
+
+		if (aux < 2) { std::cout << " Something wrong with the elements " << std::endl; }        // Must have at least 2 shared nodes
+		double length = 0;
+
+		// Computation of the l_char
+		if (aux < 3) {                                                                           // It is not an edge element --> The 2 elements are not equal
+			length = pow((pow(Xcoord[0] - Xcoord[1], 2) + pow(Ycoord[0] - Ycoord[1], 2)), 0.5);  // Length of the edge between 2 elements
+			l_char = length;                                                                     // Currently the characteristic length is the edge length (can be modified)
+		}
+		else {  // Edge Element
+			double ElementArea = NeibElement.GetGeometry().Area();
+			l_char = sqrt(4 * ElementArea / sqrt(3));   // Cervera's Formula
+			
+		} // l_char computed
+
+		CurrentElement->Set_l_char(l_char, cont);  // Storages the l_char of this side
+		CurrentElement->IterationPlus();
+	}
+
+
+
 
 	void AleCornVelElement::Get2MaxValues(Vector& MaxValues, double a, double b, double c)
 	{
@@ -1163,6 +1176,7 @@ namespace Kratos
 
 		if (this->Get_threshold(cont) == 0) { this->Set_threshold(c_max, cont); }   // 1st iteration sets threshold as c_max
 		c_threshold = this->Get_threshold(cont);
+		//KRATOS_WATCH(c_threshold)
 		this->Set_NonConvergedf_sigma(f, cont);
 	
 		F = f - c_threshold;

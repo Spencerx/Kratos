@@ -250,12 +250,10 @@ class AdaptiveMeshRefinementUtility:
             Wait()
 
             print("ANTES ",self.ProjectParameters["solver_settings"])
-            del self.ProjectParameters["solver_settings"]["damp_factor_m"]
-            del self.ProjectParameters["solver_settings"]["dynamic_factor"]
-            print(self.ProjectParameters["solver_settings"])
-
-
             
+
+
+
 
             #construct the solver (main setting methods are located in the solver_module)
             solver_module = __import__(self.ProjectParameters["solver_settings"]["solver_type"].GetString())
