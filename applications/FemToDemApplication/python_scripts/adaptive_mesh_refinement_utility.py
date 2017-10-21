@@ -224,7 +224,7 @@ class AdaptiveMeshRefinementUtility:
             
             #Finalize previous solver
             #main_step_solver.Finalize()
-            main_step_solver.FinalizeSolutionStep() # cornejo
+            #main_step_solver.FinalizeSolutionStep() # cornejo
             
             #Save previous model_part
             model_part_old = model_part
@@ -241,9 +241,14 @@ class AdaptiveMeshRefinementUtility:
             model_part.ProcessInfo.SetValue(DOMAIN_SIZE, self.ProjectParameters["problem_data"]["domain_size"].GetInt())
             model_part.ProcessInfo.SetValue(DELTA_TIME,  delta_time)
             model_part.ProcessInfo.SetValue(TIME, current_time)  # curent or current+delta_t ??
+            #model_part.ProcessInfo[STEP] = model_part_old.ProcessInfo[STEP]
 
-            print("time", model_part.ProcessInfo[TIME])
-            Wait()
+
+           
+
+
+            #print("time", model_part.ProcessInfo[TIME])
+            #Wait()
             ###TODO replace this "model" for real one once available in kratos core
             self.Model = {self.ProjectParameters["problem_data"]["model_part_name"].GetString() : model_part}
 
@@ -290,7 +295,12 @@ class AdaptiveMeshRefinementUtility:
             neighbour_elemental_finder =  FindElementalNeighboursProcess(model_part, 2, 5)
             neighbour_elemental_finder.Execute()
 
-            model_part.ProcessInfo[STEP] += 1
+            #model_part.ProcessInfo.SetValue(STEP, model_part_old.ProcessInfo[STEP])
+            print("step: ", model_part.ProcessInfo[STEP])
+            print("akiii", model_part)
+            Wait()
+
+            #model_part.ProcessInfo[STEP] += 1
             #model_part.CloneTimeStep(current_time) 
 
 
@@ -309,7 +319,8 @@ class AdaptiveMeshRefinementUtility:
             MappingVariablesProcess(model_part_old, model_part, "Constant").Execute()
 
             ## Erase old Model Part -----------------------------------------------------------------------------------------
-            
+            # transfer post data
+            model_part.ProcessInfo[PRINTED_STEP] = model_part_old.ProcessInfo[PRINTED_STEP]
             model_part_old = None
             
             ## Test new Mesh ------------------------------------------------------------------------------------------------
@@ -342,7 +353,13 @@ class AdaptiveMeshRefinementUtility:
         
         self.last_refinement_id = current_id + 1
         self.n_refinements = self.n_refinements + 1
+
+
         
+
+
+
+
         return model_part, main_step_solver, gid_output_util
 
 

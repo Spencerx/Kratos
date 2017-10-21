@@ -50,7 +50,7 @@
             "model_part_name": "Solid_Displacement-auto-1",
             "variable_name":   "DISPLACEMENT",
             "value":           [0.0,0.0,0.0],
-            "interval":        [0.0,"End"]
+            "interval":        [0.0,5.0]
         }
     }],
     "loads_process_list": [{
@@ -61,7 +61,7 @@
             "mesh_id":         0,
             "model_part_name": "Body_Acceleration-auto-1",
             "variable_name":   "VOLUME_ACCELERATION",
-            "modulus":             2.0,
+            "modulus":             "t",
             "direction":           [0.0,-1.0,0.0],
             "interval":            [0.0,"End"]
         }
@@ -82,7 +82,7 @@
             "skin_output":          false,
             "plane_output":         [],
             "nodal_results":       ["DISPLACEMENT","VELOCITY","ACCELERATION"],
-            "gauss_point_results": ["GREEN_LAGRANGE_STRAIN_TENSOR","CAUCHY_STRESS_TENSOR","STRESS_VECTOR","STRESS_VECTOR_INTEGRATED","DAMAGE_ELEMENT","IS_DAMAGED"]
+            "gauss_point_results": ["GREEN_LAGRANGE_STRAIN_TENSOR","CAUCHY_STRESS_TENSOR","STRESS_VECTOR","STRESS_VECTOR_INTEGRATED","DAMAGE_ELEMENT"]
         },
         "point_data_configuration":  []
     },

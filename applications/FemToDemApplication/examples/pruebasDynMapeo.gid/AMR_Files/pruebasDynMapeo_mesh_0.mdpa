@@ -4,7 +4,7 @@ End Properties
 
 Begin Properties 1
 // ELASTIC PROPERTIES
-    YOUNG_MODULUS            35e9
+    YOUNG_MODULUS            3.0e9
     DENSITY                  2400
     POISSON_RATIO            0.2
     THICKNESS                1.0
@@ -12,8 +12,8 @@ Begin Properties 1
 // DAMAGE PARAMETERS
     YIELD_SURFACE            ModifiedMohrCoulomb
     YIELD_STRESS_C           30e6
-    YIELD_STRESS_T           3.7e6
-    FRAC_ENERGY_T            10000e11
+    YIELD_STRESS_T           1.5e6
+    FRAC_ENERGY_T            150
     INTERNAL_FRICTION_ANGLE  32
     CHARACTERISTIC_LENGTH    0.02
 

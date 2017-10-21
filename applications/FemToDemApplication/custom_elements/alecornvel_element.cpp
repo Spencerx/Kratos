@@ -146,6 +146,15 @@ namespace Kratos
 		this->SetValue(STRESS_THRESHOLD, EqThreshold); // AMR
 		this->Set_threshold(EqThreshold);
 
+
+		this->SetValue(DAMAGE_ELEMENT, damage_element);
+
+
+		//if (this->Id()== 126)
+		//{
+		//	std::cout<<damage_element<<std::endl;
+		//	std::cout<<damage_element<<std::endl;
+		//}
 		// if (damage_element > 0.0){
 		// 	std::cout << " ************************************" << std::endl;
 		// 	std::cout << " ************************************" << std::endl;
@@ -642,7 +651,8 @@ namespace Kratos
 		{
 			rOutput.resize(1);
 			for (unsigned int PointNumber = 0; PointNumber < 1; PointNumber++) {
-				rOutput[PointNumber] = double(this->Get_Convergeddamage());
+				//rOutput[PointNumber] = double(this->Get_Convergeddamage());
+				rOutput[PointNumber] = double(this->GetValue(DAMAGE_ELEMENT));
 			}
 		}
 

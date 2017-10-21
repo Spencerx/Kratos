@@ -278,7 +278,7 @@ class FEM_Solution(MainSolidFEM.Solution):
 		self.main_model_part.CloneTimeStep(self.time) 
 
 
-		print(" [STEP:",self.step," TIME:",self.time,"]")
+		print(" [STEP:", self.step," TIME:", self.time,"]")
 
 		# processes to be executed at the begining of the solution step
 		self.model_processes.ExecuteInitializeSolutionStep()
@@ -336,6 +336,36 @@ class FEM_Solution(MainSolidFEM.Solution):
 #============================================================================================================================
 	def FinalizeSolutionStep(self):
 
+		is_refined_this_step = False
+
+		if(self.activate_AMR):
+			self.refine, self.last_mesh = self.AMR_util.CheckAMR(self.time)
+			if(self.refine):
+				is_refined_this_step = True
+				self.main_model_part, self.solver, self.gid_output_util = self.AMR_util.Execute(self.main_model_part,
+					                                                                                    self.solver,
+					                                                                                    self.gid_output_util,
+					                                                                                    self.time,
+					                                                                                    self.current_id)
+			elif(self.last_mesh):
+				self.AMR_util.Finalize(self.main_model_part,self.current_id)
+
+		print("******************************************************")
+		print("******************************************************")
+		#print(self.main_model_part)
+		Wait()
+#---------------------------- every time remeshing is done
+		if (is_refined_this_step):
+			self.computing_model_part = self.solver.GetComputingModelPart()
+			self.SetGraphicalOutput()
+			self.main_model_part.ProcessInfo[KratosMultiphysics.STEP] = self.step
+			#self.graphical_output.step_count = self.step
+			self.GraphicalOutputExecuteInitialize()
+			is_refined_this_step = False
+
+			self.model_processes = self.AddProcesses()
+			self.model_processes.ExecuteInitialize()
+#----------------------------
 
 		self.GraphicalOutputExecuteFinalizeSolutionStep()			
 
@@ -354,20 +384,11 @@ class FEM_Solution(MainSolidFEM.Solution):
 		# Eliminates elements from the mesh with damage > 0.98
 		self.main_model_part.RemoveElementsFromAllLevels(KratosMultiphysics.TO_ERASE)
 
-		if(self.activate_AMR):
-			self.refine, self.last_mesh = self.AMR_util.CheckAMR(self.time)
-			if(self.refine):
-				self.main_model_part, self.main_step_solver, self.gid_output_util = self.AMR_util.Execute(self.main_model_part,
-					                                                                                    self.solver,
-					                                                                                    self.gid_output_util,
-					                                                                                    self.time,
-					                                                                                    self.current_id)
-			elif(self.last_mesh):
-				self.AMR_util.Finalize(self.main_model_part,self.current_id)
 
-		print("despues de execute AMR")
-		print(self.main_model_part)
-		print("tiempooo :", self.time)
+
+		#print("despues de execute AMR")
+		#print(self.main_model_part)
+		#print("tiempooo :", self.time)
 
 
 
