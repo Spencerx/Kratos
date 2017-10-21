@@ -253,15 +253,18 @@ protected:
 
         Element::Pointer pElementOld;
         Element::GeometryType::CoordinatesArrayType NodeLocalCoordinates;
-        Vector ElementDisplacements, ElementShapeFunctions;
+        Vector ElementDisplacements,ElementVelocities,ElementAccelerations, ElementShapeFunctions;
         double Tolerance = 1e-4;
         bool IsInside;
         
-        //Locate new nodes inside old elements and interpolate displacements.  ->> TODO Velocities and accelerations
+        //Locate new nodes inside old elements and interpolate displacements.  
         //Triangles2D3N
         //if((*mmodel_part_old.Elements().ptr_begin())->GetGeometry().PointsNumber() == 3)
         //{
             ElementDisplacements = ZeroVector(3);
+            ElementVelocities    = ZeroVector(3);
+            ElementAccelerations = ZeroVector(3);
+
             for(unsigned int i = 0; i < NodeNewVector.size(); i++)
             {
                 Element::GeometryType::PointType& NodeNew_i = NodeNewVector[i]->rNode;
@@ -295,6 +298,19 @@ protected:
                     ElementDisplacements[1] = pElementOld->GetGeometry().GetPoint(1).FastGetSolutionStepValue(DISPLACEMENT)[0];
                     ElementDisplacements[2] = pElementOld->GetGeometry().GetPoint(2).FastGetSolutionStepValue(DISPLACEMENT)[0];
                     NodeNew_i.FastGetSolutionStepValue(DISPLACEMENT)[0] = inner_prod(ElementShapeFunctions,ElementDisplacements);
+
+                    if (mmodel_part_old.GetProcessInfo()[IS_DYNAMIC] == 1)  // Mapping of velocities and accelerations
+                    {
+                        ElementVelocities[0] = pElementOld->GetGeometry().GetPoint(0).FastGetSolutionStepValue(VELOCITY)[0];
+                        ElementVelocities[1] = pElementOld->GetGeometry().GetPoint(1).FastGetSolutionStepValue(VELOCITY)[0];
+                        ElementVelocities[2] = pElementOld->GetGeometry().GetPoint(2).FastGetSolutionStepValue(VELOCITY)[0];
+                        NodeNew_i.FastGetSolutionStepValue(VELOCITY)[0] = inner_prod(ElementShapeFunctions,ElementVelocities);
+
+                        ElementAccelerations[0] = pElementOld->GetGeometry().GetPoint(0).FastGetSolutionStepValue(ACCELERATION)[0];
+                        ElementAccelerations[1] = pElementOld->GetGeometry().GetPoint(1).FastGetSolutionStepValue(ACCELERATION)[0];
+                        ElementAccelerations[2] = pElementOld->GetGeometry().GetPoint(2).FastGetSolutionStepValue(ACCELERATION)[0];
+                        NodeNew_i.FastGetSolutionStepValue(ACCELERATION)[0] = inner_prod(ElementShapeFunctions,ElementAccelerations);
+                    }
                 }
                 // else if( mImposedDisplacement == "Linearly_Incremented" )
                 //     NodeNew_i.FastGetSolutionStepValue(DISPLACEMENT)[0] = mmodel_part_old.GetProcessInfo()[TIME_STEPS] * NodeNew_i.FastGetSolutionStepValue(IMPOSED_DISPLACEMENT)[0];
@@ -305,6 +321,19 @@ protected:
                     ElementDisplacements[1] = pElementOld->GetGeometry().GetPoint(1).FastGetSolutionStepValue(DISPLACEMENT)[1];
                     ElementDisplacements[2] = pElementOld->GetGeometry().GetPoint(2).FastGetSolutionStepValue(DISPLACEMENT)[1];
                     NodeNew_i.FastGetSolutionStepValue(DISPLACEMENT)[1] = inner_prod(ElementShapeFunctions,ElementDisplacements);
+
+                    if (mmodel_part_old.GetProcessInfo()[IS_DYNAMIC] == 1)  // Mapping of velocities and accelerations
+                    {
+                        ElementVelocities[0] = pElementOld->GetGeometry().GetPoint(0).FastGetSolutionStepValue(VELOCITY)[1];
+                        ElementVelocities[1] = pElementOld->GetGeometry().GetPoint(1).FastGetSolutionStepValue(VELOCITY)[1];
+                        ElementVelocities[2] = pElementOld->GetGeometry().GetPoint(2).FastGetSolutionStepValue(VELOCITY)[1];
+                        NodeNew_i.FastGetSolutionStepValue(VELOCITY)[0] = inner_prod(ElementShapeFunctions,ElementVelocities);
+
+                        ElementAccelerations[0] = pElementOld->GetGeometry().GetPoint(0).FastGetSolutionStepValue(ACCELERATION)[1];
+                        ElementAccelerations[1] = pElementOld->GetGeometry().GetPoint(1).FastGetSolutionStepValue(ACCELERATION)[1];
+                        ElementAccelerations[2] = pElementOld->GetGeometry().GetPoint(2).FastGetSolutionStepValue(ACCELERATION)[1];
+                        NodeNew_i.FastGetSolutionStepValue(ACCELERATION)[0] = inner_prod(ElementShapeFunctions,ElementAccelerations);
+                    }
                 }
              //     else if( mImposedDisplacement == "Linearly_Incremented" )
              //         NodeNew_i.FastGetSolutionStepValue(DISPLACEMENT)[1] = mmodel_part_old.GetProcessInfo()[TIME_STEPS] * NodeNew_i.FastGetSolutionStepValue(IMPOSED_DISPLACEMENT)[1];
@@ -624,7 +653,7 @@ protected:
                 DamageVariable  = DamageNumerator / WeightingFunctionDenominator;
                 StressThreshold = ThresholdNumerator / WeightingFunctionDenominator;
             }
-            
+
 			Me->SetValue(DAMAGE_ELEMENT, DamageVariable);
 			Me->SetValue(STRESS_THRESHOLD, StressThreshold);
         }

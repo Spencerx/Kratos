@@ -85,7 +85,28 @@ namespace Kratos
 
 	void AleCornVelElement::InitializeSolutionStep(ProcessInfo& rCurrentProcessInfo)
 	{
-		SmallDisplacementElement::InitializeSolutionStep(rCurrentProcessInfo);
+		// After the mapping, the thresholds of the edges ( are equal to 0.0) are imposed equal to the IP threshold
+		double *thresholds = this->GetThresholds();
+		double ElementThreshold = this->Get_threshold();
+		
+		if (thresholds[0] == 0.0 && thresholds[1] == 0.0 && thresholds[2] == 0.0)
+		{
+			thresholds[0] = ElementThreshold;
+			thresholds[1] = ElementThreshold;
+			thresholds[2] = ElementThreshold;
+		}
+
+		// IDEM with the edge damages
+		double *DamageEdges   = this->GetDamages();
+		double DamageElement = this->Get_Convergeddamage();
+
+		if (DamageEdges[0] == 0.0 && DamageEdges[1] == 0.0 && DamageEdges[2] == 0.0)
+		{
+			DamageEdges[0] = DamageElement;
+			DamageEdges[1] = DamageElement;
+			DamageEdges[2] = DamageElement;
+		}
+
 	}
 
 	void AleCornVelElement::FinalizeSolutionStep(ProcessInfo& rCurrentProcessInfo)
@@ -112,12 +133,30 @@ namespace Kratos
 			if (damage_element >= 0.98)
 			{
 				this->Set(TO_ERASE, true);
-				//std::cout << "ELIMINADO EL ELEMENTO  " << this->Id() << std::endl;
 			}
 
 		this->ResetNonConvergedVars();
 		this->SetToZeroIteration();
 
+		// computation of the equivalent damage threshold of the element for AMR mapping
+		double *thresholds = this->GetThresholds();
+		Vector TwoMaxValues;
+		this->Get2MaxValues(TwoMaxValues, thresholds[0], thresholds[1], thresholds[2]);
+		double EqThreshold = 0.5*(TwoMaxValues[0] + TwoMaxValues[1]);
+		this->SetValue(STRESS_THRESHOLD, EqThreshold); // AMR
+		this->Set_threshold(EqThreshold);
+
+		// if (damage_element > 0.0){
+		// 	std::cout << " ************************************" << std::endl;
+		// 	std::cout << " ************************************" << std::endl;
+		// 	KRATOS_WATCH(thresholds[0])
+		// 	KRATOS_WATCH(thresholds[1])
+		// 	KRATOS_WATCH(thresholds[2])
+		// 	std::cout << " ************************************" << std::endl;
+		// 	KRATOS_WATCH(EqThreshold)
+		// 	std::cout << " ************************************" << std::endl;
+		// 	std::cout << " ************************************" << std::endl;
+		// }
 	}
 
 	void AleCornVelElement::InitializeNonLinearIteration(ProcessInfo& rCurrentProcessInfo)
@@ -212,22 +251,20 @@ namespace Kratos
 			//CALL THE CONSTITUTIVE LAW (for this integration point)
 			//(after calling the constitutive law StressVector and ConstitutiveMatrix are set and can be used)
 			mConstitutiveLawVector[PointNumber]->CalculateMaterialResponseCauchy(Values);  
-			//this->SetStressVector(Values.GetStressVector());
 			this->SetValue(STRESS_VECTOR, Values.GetStressVector());
 
 			this->CalculateDeformationMatrix(B, DN_DX);
 			this->SetBMatrix(B);
 		}
 		KRATOS_CATCH("")
-		//*****************************
+
 	}
 
 	
-
 	void AleCornVelElement::CalculateLocalSystem (MatrixType& rLeftHandSideMatrix, VectorType& rRightHandSideVector, ProcessInfo& rCurrentProcessInfo)
 	{
 		KRATOS_TRY
-		//*****************************
+
 		const unsigned int number_of_nodes = GetGeometry().size();
 		const unsigned int dimension = GetGeometry().WorkingSpaceDimension();
 		unsigned int voigt_size = dimension * (dimension + 1) * 0.5;
@@ -325,42 +362,42 @@ namespace Kratos
 			this->SetIntegratedStressVector(IntegratedStressVector);
 
 			// Computation of the LHS with the Secant Constitutive Tensor
-			if (this->GetProperties()[TANGENT_CONSTITUTIVE_TENSOR] == 0 || damage_element == 0.0)
-			{
+			//if (this->GetProperties()[TANGENT_CONSTITUTIVE_TENSOR] == 0 || damage_element == 0.0)
+			//{
 				Matrix ConstitutiveMatrix = ZeroMatrix(voigt_size, voigt_size);
 				double E  = this->GetProperties()[YOUNG_MODULUS];
 				double nu = this->GetProperties()[POISSON_RATIO];
 				this->CalculateConstitutiveMatrix(ConstitutiveMatrix, E, nu);
 
 				noalias(rLeftHandSideMatrix) += prod(trans(B), IntegrationWeight *(1 - damage_element)* Matrix(prod(ConstitutiveMatrix, B))); //LHS
-			}
-			else // Tangent Constitutive Tensor
-			{
-				KRATOS_WATCH(damage_element)
-					KRATOS_WATCH(this->Id())
-				Matrix Aux = ZeroMatrix(3, 3);
-				Matrix TangentTensor = ZeroMatrix(3, 3);
-				for (int cont = 0; cont < 3; cont++)
-				{
-					Vector Stress1, Stress2, AverageStress;
-					Vector Strain1, Strain2, AverageStrain;
+			//}
+			// else // Tangent Constitutive Tensor
+			// {
+			// 	KRATOS_WATCH(damage_element)
+			// 		KRATOS_WATCH(this->Id())
+			// 	Matrix Aux = ZeroMatrix(3, 3);
+			// 	Matrix TangentTensor = ZeroMatrix(3, 3);
+			// 	for (int cont = 0; cont < 3; cont++)
+			// 	{
+			// 		Vector Stress1, Stress2, AverageStress;
+			// 		Vector Strain1, Strain2, AverageStrain;
 
-					Stress1 = this->GetValue(STRESS_VECTOR);
-					Stress2 = elem_neigb[cont].GetValue(STRESS_VECTOR);
+			// 		Stress1 = this->GetValue(STRESS_VECTOR);
+			// 		Stress2 = elem_neigb[cont].GetValue(STRESS_VECTOR);
 
-					Strain1 = this->GetValue(STRAIN_VECTOR);
-					Strain2 = elem_neigb[cont].GetValue(STRAIN_VECTOR);
+			// 		Strain1 = this->GetValue(STRAIN_VECTOR);
+			// 		Strain2 = elem_neigb[cont].GetValue(STRAIN_VECTOR);
 
-					this->AverageVector(AverageStress, Stress1, Stress2);
-					this->AverageVector(AverageStrain, Strain1, Strain2);
+			// 		this->AverageVector(AverageStress, Stress1, Stress2);
+			// 		this->AverageVector(AverageStrain, Strain1, Strain2);
 
-					Matrix TangentTensor;
-					this->CalculateTangentTensor(TangentTensor, AverageStrain, AverageStress, cont, this->Get_l_char(cont));
-					Aux += TangentTensor;
-				}
-				TangentTensor = Aux / 3;
-				noalias(rLeftHandSideMatrix) += prod(trans(B), IntegrationWeight * Matrix(prod(TangentTensor, B))); //LHS
-			}
+			// 		Matrix TangentTensor;
+			// 		this->CalculateTangentTensor(TangentTensor, AverageStrain, AverageStress, cont, this->Get_l_char(cont));
+			// 		Aux += TangentTensor;
+			// 	}
+			// 	TangentTensor = Aux / 3;
+			// 	noalias(rLeftHandSideMatrix) += prod(trans(B), IntegrationWeight * Matrix(prod(TangentTensor, B))); //LHS
+			// }
 
 			Vector VolumeForce = ZeroVector(dimension);
 			VolumeForce = this->CalculateVolumeForce(VolumeForce, N);

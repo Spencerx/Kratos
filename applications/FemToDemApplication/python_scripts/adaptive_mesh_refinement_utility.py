@@ -112,7 +112,7 @@ class AdaptiveMeshRefinementUtility:
         
         if(output_mode=="GiD_PostBinary"):
             if(output_multiple_files=="MultipleFiles"):
-                for i in range(self.last_refinement_id,current_id + 1):
+                for i in range(self.last_refinement_id, current_id + 1):
                     # os.system("move "+str(self.problem_path)+"/"+str(problem_name)+"_"+str(i)+".post.bin "+str(self.AMR_files_path)+"/"+str(problem_name)+"_results_mesh_"+str(self.n_refinements)+"_step_"+str(i)+".post.bin")
                     src = os.path.join(self.problem_path, str(problem_name) + str(i) + ".post.bin")
                     dst = os.path.join(self.AMR_files_path, str(problem_name) + "_results_mesh_" + str(self.n_refinements) +"_step_" + str(i) + ".post.bin")
@@ -125,7 +125,7 @@ class AdaptiveMeshRefinementUtility:
 
         else:
             if(output_multiple_files=="MultipleFiles"):
-                for i in range(self.last_refinement_id,current_id+1):
+                for i in range(self.last_refinement_id, current_id + 1):
                     #os.system("move "+str(self.problem_path)+"/"+str(problem_name)+"_"+str(i)+".post.msh "+str(self.AMR_files_path)+"/"+str(problem_name)+"_results_mesh_"+str(self.n_refinements)+"_step_"+str(i)+".post.msh")
                     #os.system("move "+str(self.problem_path)+"/"+str(problem_name)+"_"+str(i)+".post.res "+str(self.AMR_files_path)+"/"+str(problem_name)+"_results_mesh_"+str(self.n_refinements)+"_step_"+str(i)+".post.res")
                     src_mesh = os.path.join(self.problem_path, str(problem_name) + "_" + str(i) + ".post.msh")
@@ -185,7 +185,7 @@ class AdaptiveMeshRefinementUtility:
                                                          mesh_optimality_criteria,
                                                          permissible_error,
                                                          self.n_refinements).Execute()
-                Wait()
+                #Wait()
 
                 # Move the posts of the amr to the AMR_folder
                 src_mesh = os.path.join(self.problem_path, str(problem_name)   + "_AMR_parameters.post.msh")
@@ -204,8 +204,8 @@ class AdaptiveMeshRefinementUtility:
                                                           permissible_error,
                                                           self.n_refinements).ExecuteAfterOutputStep()
             
-            print("despues execute after output step")
-            Wait()
+            #print("despues execute after output step")
+           # Wait()
             
 
             # GID GENERATE THE NEW MESH BASED ON THE BACKGROUND MESH  ----> TODO
@@ -235,24 +235,22 @@ class AdaptiveMeshRefinementUtility:
             # Definition of model part
             #model_part = ModelPart("SolidDomain")
             delta_time = self.ProjectParameters["problem_data"]["time_step" ].GetDouble()
-            current_time += delta_time
+            #current_time += delta_time
 
             model_part = ModelPart(self.ProjectParameters["problem_data"]["model_part_name"].GetString())
             model_part.ProcessInfo.SetValue(DOMAIN_SIZE, self.ProjectParameters["problem_data"]["domain_size"].GetInt())
             model_part.ProcessInfo.SetValue(DELTA_TIME,  delta_time)
             model_part.ProcessInfo.SetValue(TIME, current_time)  # curent or current+delta_t ??
 
-
+            print("time", model_part.ProcessInfo[TIME])
+            Wait()
             ###TODO replace this "model" for real one once available in kratos core
             self.Model = {self.ProjectParameters["problem_data"]["model_part_name"].GetString() : model_part}
-            print(self.ProjectParameters["solver_settings"])
-            print("antes de create")
-            Wait()
-
-            print("ANTES ",self.ProjectParameters["solver_settings"])
-            
 
 
+            # we delete 2 added parameters to avoid error --> TODO
+            self.ProjectParameters["solver_settings"].RemoveValue("damp_factor_m")
+            self.ProjectParameters["solver_settings"].RemoveValue("dynamic_factor")
 
 
             #construct the solver (main setting methods are located in the solver_module)
@@ -260,8 +258,8 @@ class AdaptiveMeshRefinementUtility:
             main_step_solver   = solver_module.CreateSolver(model_part, self.ProjectParameters["solver_settings"])
 
 
-            print("despues de create")
-            Wait()
+            #print("delta time:" , model_part.ProcessInfo[DELTA_TIME])
+            #Wait()
             # Add variables (always before importing the model part)
             main_step_solver.AddVariables()
 
@@ -293,9 +291,7 @@ class AdaptiveMeshRefinementUtility:
             neighbour_elemental_finder.Execute()
 
             model_part.ProcessInfo[STEP] += 1
-            self.main_model_part.CloneTimeStep(current_time) 
-# cornejo ----------------------------------------------------------------------
-
+            #model_part.CloneTimeStep(current_time) 
 
 
             # Definition of output utility
@@ -310,9 +306,7 @@ class AdaptiveMeshRefinementUtility:
 #------------------------------------------------------------------->> Aqui estamos
             ## Mapping of variables -----------------------------------------------------------------------------------------
             
-            MappingVariablesProcess(model_part_old, 
-                                    model_part, 
-                                    "Constant").Execute()
+            MappingVariablesProcess(model_part_old, model_part, "Constant").Execute()
 
             ## Erase old Model Part -----------------------------------------------------------------------------------------
             
@@ -320,21 +314,22 @@ class AdaptiveMeshRefinementUtility:
             
             ## Test new Mesh ------------------------------------------------------------------------------------------------
             
-            #mesh_convergence = main_step_solver.TestNewMesh()  # cornejo: we will use solvesolutionstep
-            main_step_solver.InitializeSolutionStep()
-            main_step_solver.Predict()
-            mesh_convergence = main_step_solver.SolveSolutionStep()
-            main_step_solver.FinalizeSolutionStep()
+            # mesh_convergence = main_step_solver.TestNewMesh()  # cornejo: we will use solvesolutionstep
+            #main_step_solver.InitializeSolutionStep()
+            #main_step_solver.Predict()
+            #mesh_convergence = main_step_solver.SolveSolutionStep()
+            #main_step_solver.FinalizeSolutionStep()
+            mesh_convergence = True # only for testing TODO
 
 
-
+            #print("***************")
             
         if(mesh_convergence == True):
             print("NEW MESH CONVERGED AFTER ", iteration_number," ITERATIONS")
         else:
             print("### WARNING: NO MESH CONVERGED AFTER ", iteration_number, " ITERATIONS ###")
         
-        print(model_part)
+        #print(model_part)
         
         ## Saving files of new mesh -----------------------------------------------------------------------------------------
         #os.system("cp "+str(self.problem_path)+"/"+str(problem_name)+".bgm "+str(self.AMR_files_path)+"/"+str(problem_name)+"_AMR_"+str(self.n_refinements+1)+".bgm")
@@ -343,7 +338,7 @@ class AdaptiveMeshRefinementUtility:
         shutil.copy(src, dst)
         ## Initialize post files of new mesh --------------------------------------------------------------------------------
 
-        gid_output_util.initialize_results(model_part, current_id + 1) #For single post file
+        #gid_output_util.initialize_results(model_part, current_id + 1) #For single post file
         
         self.last_refinement_id = current_id + 1
         self.n_refinements = self.n_refinements + 1
@@ -359,8 +354,8 @@ class AdaptiveMeshRefinementUtility:
         
         problem_name = self.ProjectParameters["problem_data"]["problem_name"].GetString()
         #GidOutputConfiguration = self.ProjectParameters.GidOutputConfiguration
-        output_mode = self.post_mode = ProjectParameters["output_configuration"]["result_file_configuration"]["gidpost_flags"]["GiDPostMode"].GetString()
-        output_multiple_files = self.multi_file_flag = ProjectParameters["output_configuration"]["result_file_configuration"]["gidpost_flags"]["MultiFileFlag"].GetString()
+        output_mode  = self.ProjectParameters["output_configuration"]["result_file_configuration"]["gidpost_flags"]["GiDPostMode"].GetString()
+        output_multiple_files  = self.ProjectParameters["output_configuration"]["result_file_configuration"]["gidpost_flags"]["MultiFileFlag"].GetString()
         plane_state = self.ProjectParameters["AMR_data"]["plane_state"].GetString()
         mesh_optimality_criteria = self.ProjectParameters["AMR_data"]["mesh_optimality_criteria"].GetString()
         permissible_error = self.ProjectParameters["AMR_data"]["permissible_error"].GetDouble()
@@ -442,7 +437,7 @@ class AdaptiveMeshRefinementUtility:
 
         if os.path.isfile("Materials.json"):
             materials_file = open("Materials.json",'r')
-            MaterialParameters = KratosMultiphysics.Parameters(materials_file.read())
+            MaterialParameters = Parameters(materials_file.read())
 
             if(MaterialParameters.Has("material_models_list")):
 
@@ -474,7 +469,7 @@ class AdaptiveMeshRefinementUtility:
         # Obtain the list of the processes to be applied
         import process_handler
 
-        process_parameters = KratosMultiphysics.Parameters("{}") 
+        process_parameters = Parameters("{}") 
         process_parameters.AddValue("echo_level", self.ProjectParameters["problem_data"]["echo_level"])
         process_parameters.AddValue("constraints_process_list", self.ProjectParameters["constraints_process_list"])
         process_parameters.AddValue("loads_process_list", self.ProjectParameters["loads_process_list"])

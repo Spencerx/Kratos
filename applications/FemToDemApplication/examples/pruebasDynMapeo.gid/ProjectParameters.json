@@ -13,15 +13,15 @@
         "domain_size":          2,
         "start_time":           0.0,
         "end_time":             5.0,
-        "time_step":            1.0,
-        "echo_level":           1
+        "time_step":            0.5,
+        "echo_level":           0
     },
    "solver_settings": {
             "solver_type":                       "solid_mechanics_implicit_dynamic_solver",
             "solution_type":                     "Dynamic",
             "time_integration_method":           "Implicit",
             "scheme_type":                       "Newmark",
-            "echo_level":                         1,
+            "echo_level":                         0,
             "model_import_settings":              {
                  "input_type":         "mdpa",
                  "input_filename":     "pruebasDynMapeo",
@@ -61,7 +61,7 @@
             "mesh_id":         0,
             "model_part_name": "Body_Acceleration-auto-1",
             "variable_name":   "VOLUME_ACCELERATION",
-            "modulus":             9.81,
+            "modulus":             2.0,
             "direction":           [0.0,-1.0,0.0],
             "interval":            [0.0,"End"]
         }

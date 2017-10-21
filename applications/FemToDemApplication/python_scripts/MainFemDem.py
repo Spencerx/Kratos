@@ -365,6 +365,10 @@ class FEM_Solution(MainSolidFEM.Solution):
 			elif(self.last_mesh):
 				self.AMR_util.Finalize(self.main_model_part,self.current_id)
 
+		print("despues de execute AMR")
+		print(self.main_model_part)
+		print("tiempooo :", self.time)
+
 
 
 #============================================================================================================================

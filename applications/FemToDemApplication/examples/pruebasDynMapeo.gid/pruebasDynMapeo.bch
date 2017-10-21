@@ -7,7 +7,7 @@ Mescape Meshing AssignSizes BackgMesh
 D:\FemDem\applications\FemToDemApplication\examples\pruebasDynMapeo.gid\pruebasDynMapeo.bgm
 Mescape Meshing Generate
 Yes
-0.087081 MeshingParametersFrom=Preferences
+0.206887 MeshingParametersFrom=Preferences
 Mescape Meshing MeshView
 Mescape Utilities Calculate
 Mescape Files WriteCalcFile

@@ -113,6 +113,7 @@ namespace Kratos
 		double Get_threshold(int cont) { return mThresholds[cont]; }
 
 		double* GetThresholds() { return mThresholds; }
+		double* GetDamages() { return mDamages; }
 
 		void   Set_threshold(double af) { mThreshold = af; }
 		double Get_threshold() { return mThreshold; }
