@@ -111,7 +111,7 @@ class AdaptiveMeshRefinementUtility:
         gid_output_util.finalize_results()
         
         if(output_mode=="GiD_PostBinary"):
-            if(output_multiple_files=="MultipleFiles"):
+            if(output_multiple_files == "MultipleFiles"):
                 for i in range(self.last_refinement_id, current_id + 1):
                     # os.system("move "+str(self.problem_path)+"/"+str(problem_name)+"_"+str(i)+".post.bin "+str(self.AMR_files_path)+"/"+str(problem_name)+"_results_mesh_"+str(self.n_refinements)+"_step_"+str(i)+".post.bin")
                     src = os.path.join(self.problem_path, str(problem_name) + str(i) + ".post.bin")
@@ -124,7 +124,7 @@ class AdaptiveMeshRefinementUtility:
                 shutil.move(src, dst)
 
         else:
-            if(output_multiple_files=="MultipleFiles"):
+            if(output_multiple_files == "MultipleFiles"):
                 for i in range(self.last_refinement_id, current_id + 1):
                     #os.system("move "+str(self.problem_path)+"/"+str(problem_name)+"_"+str(i)+".post.msh "+str(self.AMR_files_path)+"/"+str(problem_name)+"_results_mesh_"+str(self.n_refinements)+"_step_"+str(i)+".post.msh")
                     #os.system("move "+str(self.problem_path)+"/"+str(problem_name)+"_"+str(i)+".post.res "+str(self.AMR_files_path)+"/"+str(problem_name)+"_results_mesh_"+str(self.n_refinements)+"_step_"+str(i)+".post.res")
@@ -295,8 +295,8 @@ class AdaptiveMeshRefinementUtility:
             neighbour_elemental_finder =  FindElementalNeighboursProcess(model_part, 2, 5)
             neighbour_elemental_finder.Execute()
 
-            #model_part.ProcessInfo.SetValue(STEP, model_part_old.ProcessInfo[STEP])
-            print("step: ", model_part.ProcessInfo[STEP])
+            # ------------- model_part.ProcessInfo.SetValue(STEP, model_part_old.ProcessInfo[STEP])
+            #print("step: ", model_part.ProcessInfo[STEP])
             print("akiii", model_part)
             Wait()
 

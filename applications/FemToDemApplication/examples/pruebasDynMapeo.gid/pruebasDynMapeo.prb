@@ -32,7 +32,7 @@ QUESTION: Refinement_Frequency
 VALUE: 2.0
 HELP: In seconds
 QUESTION: gid_path
-VALUE: D:\\Program Files (x86)\\GiD 13.1.8d\\gid.exe
+VALUE: F:\\Program Files\\GiD\\GiD 13.1.7d\\gid.exe
 TITLE: Solver_Settings
 QUESTION: Solution_Type#CB#(Static,Dynamic)
 VALUE: Dynamic
