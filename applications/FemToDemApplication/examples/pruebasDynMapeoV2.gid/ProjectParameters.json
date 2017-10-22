@@ -8,7 +8,7 @@
         "gid_path":                       "F:\\Program Files\\GiD\\GiD 13.1.7d\\gid.exe"
     },
    "problem_data": {
-        "problem_name":         "pruebasDynMapeo",
+        "problem_name":         "pruebasDynMapeoV2",
         "model_part_name":      "Structure",
         "domain_size":          2,
         "start_time":           0.0,
@@ -24,7 +24,7 @@
             "echo_level":                         0,
             "model_import_settings":              {
                  "input_type":         "mdpa",
-                 "input_filename":     "pruebasDynMapeo",
+                 "input_filename":     "pruebasDynMapeoV2",
                  "input_file_label":    0
             },
             "line_search":                          false,

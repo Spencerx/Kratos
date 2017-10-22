@@ -178,12 +178,6 @@ protected:
 
         for(ElementsArrayType::ptr_iterator it = mmodel_part_old.Elements().ptr_begin(); it != mmodel_part_old.Elements().ptr_end(); ++it)
         {
-			if ((*it)->Id() == 126) {
-				std::cout << "damage " << (*it)->GetValue(DAMAGE_ELEMENT) << std::endl;
-				std::cout << "damage " << (*it)->GetValue(DAMAGE_ELEMENT) << std::endl;
-			}
-
-
             AverageElementLength += (*it)->GetGeometry().Length();
         }
         AverageElementLength = AverageElementLength / mmodel_part_old.NumberOfElements();
@@ -296,7 +290,7 @@ protected:
                     }
                 }
         
-                ElementShapeFunctions = this->TriangleShapeFunctions(NodeLocalCoordinates[0],NodeLocalCoordinates[1]);
+                ElementShapeFunctions = this->TriangleShapeFunctions(NodeLocalCoordinates[0], NodeLocalCoordinates[1]);
         
                 if( (NodeNew_i.pGetDof(DISPLACEMENT_X))->IsFixed() == false )
                 {
@@ -333,12 +327,12 @@ protected:
                         ElementVelocities[0] = pElementOld->GetGeometry().GetPoint(0).FastGetSolutionStepValue(VELOCITY)[1];
                         ElementVelocities[1] = pElementOld->GetGeometry().GetPoint(1).FastGetSolutionStepValue(VELOCITY)[1];
                         ElementVelocities[2] = pElementOld->GetGeometry().GetPoint(2).FastGetSolutionStepValue(VELOCITY)[1];
-                        NodeNew_i.FastGetSolutionStepValue(VELOCITY)[0] = inner_prod(ElementShapeFunctions,ElementVelocities);
+                        NodeNew_i.FastGetSolutionStepValue(VELOCITY)[1] = inner_prod(ElementShapeFunctions,ElementVelocities);
 
                         ElementAccelerations[0] = pElementOld->GetGeometry().GetPoint(0).FastGetSolutionStepValue(ACCELERATION)[1];
                         ElementAccelerations[1] = pElementOld->GetGeometry().GetPoint(1).FastGetSolutionStepValue(ACCELERATION)[1];
                         ElementAccelerations[2] = pElementOld->GetGeometry().GetPoint(2).FastGetSolutionStepValue(ACCELERATION)[1];
-                        NodeNew_i.FastGetSolutionStepValue(ACCELERATION)[0] = inner_prod(ElementShapeFunctions,ElementAccelerations);
+                        NodeNew_i.FastGetSolutionStepValue(ACCELERATION)[1] = inner_prod(ElementShapeFunctions,ElementAccelerations);
                     }
                 }
              //     else if( mImposedDisplacement == "Linearly_Incremented" )
@@ -607,12 +601,6 @@ protected:
                     IntegrationCoefficient = Other->GetValue(INTEGRATION_COEFFICIENT);
                     DamageVariable = Other->GetValue(DAMAGE_ELEMENT);
                     StressThreshold = Other->GetValue(STRESS_THRESHOLD);
-
-					if (Other->Id() == 126) { 
-						std::cout << Other->GetValue(DAMAGE_ELEMENT) << std::endl;
-						std::cout << DamageVariable << std::endl;
-					}
-
                     
                     // Mapping of the damage and the threshold GP variables
                     DamageNumerator    += IntegrationCoefficient * exp(- 4 * Distance * Distance / (rCharacteristicLength * rCharacteristicLength)) * DamageVariable;
@@ -658,7 +646,7 @@ protected:
             if (fabs(WeightingFunctionDenominator) < 1e-15) 
             { // TODO-> CHECK WHY
                 StressThreshold = rDamageThreshold;
-                DamageVariable = 0.0;  // modify TODO
+                DamageVariable = 0.0;
             }
             else 
             {

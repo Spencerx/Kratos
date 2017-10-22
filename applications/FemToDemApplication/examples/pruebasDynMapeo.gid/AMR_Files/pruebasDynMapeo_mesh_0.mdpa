@@ -13,7 +13,7 @@ Begin Properties 1
     YIELD_SURFACE            ModifiedMohrCoulomb
     YIELD_STRESS_C           30e6
     YIELD_STRESS_T           1.5e6
-    FRAC_ENERGY_T            150
+    FRAC_ENERGY_T            1.5e5
     INTERNAL_FRICTION_ANGLE  32
     CHARACTERISTIC_LENGTH    0.02
 

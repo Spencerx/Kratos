@@ -278,21 +278,31 @@ class FEM_Solution(MainSolidFEM.Solution):
 		self.main_model_part.CloneTimeStep(self.time) 
 
 
-		print(" [STEP:", self.step," TIME:", self.time,"]")
+		print(" [STEP:",self.step," TIME:",self.time,"]")
+
+		print("priemro")
+		Wait()
 
 		# processes to be executed at the begining of the solution step
 		self.model_processes.ExecuteInitializeSolutionStep()
-
+		print("segundo")
+		Wait()
 		self.GraphicalOutputExecuteInitializeSolutionStep()
-
+		print("tercero")
+		Wait()
 		self.solver.InitializeSolutionStep()
+		print("cuarto")
+		Wait()
 
 #============================================================================================================================
 	def SolveSolutionStep(self):
 
 		self.clock_time = self.StartTimeMeasuring();
-
+		print("quinto")
+		Wait()
 		self.solver.Solve()
+		print("sexto")
+		Wait()
 
 		# ************* PRINTS DE PRUEBA ******************************************* 
 		#print("*************************************")
@@ -336,36 +346,6 @@ class FEM_Solution(MainSolidFEM.Solution):
 #============================================================================================================================
 	def FinalizeSolutionStep(self):
 
-		is_refined_this_step = False
-
-		if(self.activate_AMR):
-			self.refine, self.last_mesh = self.AMR_util.CheckAMR(self.time)
-			if(self.refine):
-				is_refined_this_step = True
-				self.main_model_part, self.solver, self.gid_output_util = self.AMR_util.Execute(self.main_model_part,
-					                                                                                    self.solver,
-					                                                                                    self.gid_output_util,
-					                                                                                    self.time,
-					                                                                                    self.current_id)
-			elif(self.last_mesh):
-				self.AMR_util.Finalize(self.main_model_part,self.current_id)
-
-		print("******************************************************")
-		print("******************************************************")
-		#print(self.main_model_part)
-		Wait()
-#---------------------------- every time remeshing is done
-		if (is_refined_this_step):
-			self.computing_model_part = self.solver.GetComputingModelPart()
-			self.SetGraphicalOutput()
-			self.main_model_part.ProcessInfo[KratosMultiphysics.STEP] = self.step
-			#self.graphical_output.step_count = self.step
-			self.GraphicalOutputExecuteInitialize()
-			is_refined_this_step = False
-
-			self.model_processes = self.AddProcesses()
-			self.model_processes.ExecuteInitialize()
-#----------------------------
 
 		self.GraphicalOutputExecuteFinalizeSolutionStep()			
 
@@ -384,11 +364,37 @@ class FEM_Solution(MainSolidFEM.Solution):
 		# Eliminates elements from the mesh with damage > 0.98
 		self.main_model_part.RemoveElementsFromAllLevels(KratosMultiphysics.TO_ERASE)
 
+		if(self.activate_AMR):
+			self.refine, self.last_mesh = self.AMR_util.CheckAMR(self.time)
+			if(self.refine):
+				self.main_model_part = self.AMR_util.Execute(self.main_model_part,
+					                                         self.solver,
+					                                         self.gid_output_util,
+					                                         self.time,
+					                                         self.current_id)
+
+				#construct the new solver (main setting methods are located in the solver_module)
+				self.ProjectParameters["solver_settings"].RemoveValue("damp_factor_m")
+				self.ProjectParameters["solver_settings"].RemoveValue("dynamic_factor")
+
+				solver_module = __import__(self.ProjectParameters["solver_settings"]["solver_type"].GetString())
+				self.solver   = solver_module.CreateSolver(self.main_model_part, self.ProjectParameters["solver_settings"])
+				self.InitializeAfterAMR()
 
 
-		#print("despues de execute AMR")
+			elif(self.last_mesh):
+				self.AMR_util.Finalize(self.main_model_part,self.current_id)
+
+
+
+
+
+		#print("NODOS: ", cont) # es correcto el nuevo mdpa
+		#print("computing model part",self.computing_model_part)
 		#print(self.main_model_part)
 		#print("tiempooo :", self.time)
+		print("************************")
+		Wait()
 
 
 
@@ -470,11 +476,102 @@ class FEM_Solution(MainSolidFEM.Solution):
 			used_time = time_fp - time_ip
 			print("::[KSM Simulation]:: [ %.2f" % round(used_time,2),"s", process," ] ")
 
+	#============================================================================================================================
+
+	def InitializeAfterAMR(self):
+
+		#### INITIALIZE ####
+		
+		# Add variables (always before importing the model part)
+		self.solver.AddVariables()
+		
+		# Read model_part (note: the buffer_size is set here) (restart is read here)
+		self.solver.ImportModelPart()
+
+		# Add dofs (always after importing the model part)
+		if((self.main_model_part.ProcessInfo).Has(KratosMultiphysics.IS_RESTARTED)):
+			if(self.main_model_part.ProcessInfo[KratosMultiphysics.IS_RESTARTED] == False):
+				self.solver.AddDofs()
+		else:
+			self.solver.AddDofs()
+
+
+		# Add materials (assign material to model_parts if Materials.json exists)
+		#self.AddMaterials()
+		
+
+		# Add processes
+		self.model_processes = self.AddProcesses()
+		self.model_processes.ExecuteInitialize()
+
+
+
+		#### START SOLUTION ####
+
+		self.computing_model_part = self.solver.GetComputingModelPart()
+
+		## Sets strategies, builders, linear solvers, schemes and solving info, and fills the buffer
+		self.solver.Initialize()
+		#self.solver.InitializeStrategy()
+		self.solver.SetEchoLevel(self.echo_level)
+
+		
+		# Initialize GiD  I/O (gid outputs, file_lists)
+		self.SetGraphicalOutput()
+		
+		self.GraphicalOutputExecuteInitialize()
+
+
+		#print(" ")
+		#print("::[KSM Simulation]:: Analysis -START- ")
+
+		#self.model_processes.ExecuteBeforeSolutionLoop()
+
+		self.GraphicalOutputExecuteBeforeSolutionLoop()		
+
+		# Set time settings
+		#self.step	   = self.main_model_part.ProcessInfo[KratosMultiphysics.STEP]
+		#self.time	   = self.main_model_part.ProcessInfo[KratosMultiphysics.TIME]
+
+		#self.end_time   = self.ProjectParameters["problem_data"]["end_time"].GetDouble()
+		#self.delta_time = self.ProjectParameters["problem_data"]["time_step"].GetDouble()
+
+
+		###   ------  Initializing Adaptive Mesh Refinement  ----------####
+		#self.cleaning_util = cleaning_utility.CleaningUtility(self.problem_path)
+
+		#self.gid_output_util = gid_output_utility.GidOutputUtility(self.ProjectParameters,
+			                                                       #self.problem_name,
+			                                                       #self.start_time,
+			                                                      # self.end_time,
+			                                                       #self.delta_time)
+
+		#self.constitutive_law_utility = []  # must be changed->provisional TODO
+		#self.conditions_util = []
+
+
+
+		#self.activate_AMR = self.ProjectParameters["AMR_data"]["activate_AMR"].GetBool()
+		#self.current_id = 1
+
+
+		# Initialize the AMR_util
+		#if(self.activate_AMR):
+			#self.AMR_util = adaptive_mesh_refinement_utility.AdaptiveMeshRefinementUtility(self.ProjectParameters,
+				                                                                          # self.start_time,
+				                                                                           #self.solver,
+				                                                                          # self.constitutive_law_utility,
+				                                                                           #gid_output_utility,
+				                                                                           #self.conditions_util,
+				                                                                           #self.problem_path)
+			#self.activate_AMR = self.AMR_util.Initialize() # check the amr criteria
+			#print("point alex 223333", self.activate_AMR)
+			#Wait()
+
+
 
 if __name__ == "__main__": 
 	Solution().Run()
-
-
 
 
 

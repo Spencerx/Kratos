@@ -111,7 +111,7 @@ class AdaptiveMeshRefinementUtility:
         gid_output_util.finalize_results()
         
         if(output_mode=="GiD_PostBinary"):
-            if(output_multiple_files == "MultipleFiles"):
+            if(output_multiple_files=="MultipleFiles"):
                 for i in range(self.last_refinement_id, current_id + 1):
                     # os.system("move "+str(self.problem_path)+"/"+str(problem_name)+"_"+str(i)+".post.bin "+str(self.AMR_files_path)+"/"+str(problem_name)+"_results_mesh_"+str(self.n_refinements)+"_step_"+str(i)+".post.bin")
                     src = os.path.join(self.problem_path, str(problem_name) + str(i) + ".post.bin")
@@ -124,7 +124,7 @@ class AdaptiveMeshRefinementUtility:
                 shutil.move(src, dst)
 
         else:
-            if(output_multiple_files == "MultipleFiles"):
+            if(output_multiple_files=="MultipleFiles"):
                 for i in range(self.last_refinement_id, current_id + 1):
                     #os.system("move "+str(self.problem_path)+"/"+str(problem_name)+"_"+str(i)+".post.msh "+str(self.AMR_files_path)+"/"+str(problem_name)+"_results_mesh_"+str(self.n_refinements)+"_step_"+str(i)+".post.msh")
                     #os.system("move "+str(self.problem_path)+"/"+str(problem_name)+"_"+str(i)+".post.res "+str(self.AMR_files_path)+"/"+str(problem_name)+"_results_mesh_"+str(self.n_refinements)+"_step_"+str(i)+".post.res")
@@ -241,11 +241,6 @@ class AdaptiveMeshRefinementUtility:
             model_part.ProcessInfo.SetValue(DOMAIN_SIZE, self.ProjectParameters["problem_data"]["domain_size"].GetInt())
             model_part.ProcessInfo.SetValue(DELTA_TIME,  delta_time)
             model_part.ProcessInfo.SetValue(TIME, current_time)  # curent or current+delta_t ??
-            #model_part.ProcessInfo[STEP] = model_part_old.ProcessInfo[STEP]
-
-
-           
-
 
             #print("time", model_part.ProcessInfo[TIME])
             #Wait()
@@ -254,62 +249,57 @@ class AdaptiveMeshRefinementUtility:
 
 
             # we delete 2 added parameters to avoid error --> TODO
-            self.ProjectParameters["solver_settings"].RemoveValue("damp_factor_m")
-            self.ProjectParameters["solver_settings"].RemoveValue("dynamic_factor")
+            #self.ProjectParameters["solver_settings"].RemoveValue("damp_factor_m")
+            #self.ProjectParameters["solver_settings"].RemoveValue("dynamic_factor")
 
 
             #construct the solver (main setting methods are located in the solver_module)
-            solver_module = __import__(self.ProjectParameters["solver_settings"]["solver_type"].GetString())
-            main_step_solver   = solver_module.CreateSolver(model_part, self.ProjectParameters["solver_settings"])
+            #solver_module = __import__(self.ProjectParameters["solver_settings"]["solver_type"].GetString())
+            #main_step_solver   = solver_module.CreateSolver(model_part, self.ProjectParameters["solver_settings"])
 
 
             #print("delta time:" , model_part.ProcessInfo[DELTA_TIME])
             #Wait()
             # Add variables (always before importing the model part)
-            main_step_solver.AddVariables()
+            #main_step_solver.AddVariables()
 
             # Read model_part (note: the buffer_size is set here) (restart is read here)
-            main_step_solver.ImportModelPart()
+            #main_step_solver.ImportModelPart()
 
             # Add dofs (always after importing the model part)
-            if((model_part.ProcessInfo).Has(IS_RESTARTED)):
-                if(model_part.ProcessInfo[IS_RESTARTED] == False):
-                    main_step_solver.AddDofs()
-            else:
-                main_step_solver.AddDofs()
+            #if((model_part.ProcessInfo).Has(IS_RESTARTED)):
+                #if(model_part.ProcessInfo[IS_RESTARTED] == False):
+                    #main_step_solver.AddDofs()
+            #else:
+                #main_step_solver.AddDofs()
 
             # Add materials (assign material to model_parts if Materials.json exists)
-            self.AddMaterials(model_part)
+            #self.AddMaterials(model_part)
 
             # Add processes
-            self.model_processes = self.AddProcesses(model_part)
-            self.model_processes.ExecuteInitialize()
+            #self.model_processes = self.AddProcesses(model_part)
+            #self.model_processes.ExecuteInitialize()
 
             #### START SOLUTION ####
 
-            self.computing_model_part = main_step_solver.GetComputingModelPart()
+            #self.computing_model_part = main_step_solver.GetComputingModelPart()
 
             ## Sets strategies, builders, linear solvers, schemes and solving info, and fills the buffer
-            main_step_solver.Initialize()
+            #main_step_solver.Initialize()
 
-            neighbour_elemental_finder =  FindElementalNeighboursProcess(model_part, 2, 5)
-            neighbour_elemental_finder.Execute()
-
-            # ------------- model_part.ProcessInfo.SetValue(STEP, model_part_old.ProcessInfo[STEP])
-            #print("step: ", model_part.ProcessInfo[STEP])
-            print("akiii", model_part)
-            Wait()
+            #neighbour_elemental_finder =  FindElementalNeighboursProcess(model_part, 2, 5)
+            #neighbour_elemental_finder.Execute()
 
             #model_part.ProcessInfo[STEP] += 1
             #model_part.CloneTimeStep(current_time) 
 
 
             # Definition of output utility
-            gid_output_util = self.gid_output_utility.GidOutputUtility(self.ProjectParameters,
-                                                                                 problem_name,
-                                                                                 current_time,
-                                                                                 self.ending_time,
-                                                                                 self.delta_time)
+            #gid_output_util = self.gid_output_utility.GidOutputUtility(self.ProjectParameters,
+                                                                                 #problem_name,
+                                                                                 #current_time,
+                                                                                 #self.ending_time,
+                                                                                # self.delta_time)
             
             
             #model_part.ProcessInfo[MESH_REFINED] = 1
@@ -319,8 +309,7 @@ class AdaptiveMeshRefinementUtility:
             MappingVariablesProcess(model_part_old, model_part, "Constant").Execute()
 
             ## Erase old Model Part -----------------------------------------------------------------------------------------
-            # transfer post data
-            model_part.ProcessInfo[PRINTED_STEP] = model_part_old.ProcessInfo[PRINTED_STEP]
+            
             model_part_old = None
             
             ## Test new Mesh ------------------------------------------------------------------------------------------------
@@ -353,14 +342,8 @@ class AdaptiveMeshRefinementUtility:
         
         self.last_refinement_id = current_id + 1
         self.n_refinements = self.n_refinements + 1
-
-
         
-
-
-
-
-        return model_part, main_step_solver, gid_output_util
+        return model_part #main_step_solver, gid_output_util
 
 
 
