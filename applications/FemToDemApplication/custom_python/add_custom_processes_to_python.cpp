@@ -47,7 +47,7 @@ namespace Kratos
 			// Mapping Variables Process
 			class_< MappingVariablesProcessType, bases< ProcessBaseType >, boost::noncopyable >
 			  ( "MappingVariablesProcess",
-			 	init < ModelPart&,ModelPart&, std::string >());
+			 	init < ModelPart&,ModelPart&, std::string, std::string >());
 
 
 		}

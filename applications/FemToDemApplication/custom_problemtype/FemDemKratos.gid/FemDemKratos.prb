@@ -32,6 +32,8 @@ VALUE: 0.09
 QUESTION: Refinement_Frequency
 VALUE: 1.0
 HELP: In seconds
+QUESTION: Mapping_Procedure#CB#(Closest_Point_Transfer,Non_Local_Average)
+VALUE: Closest_Point_Transfer
 QUESTION: gid_path
 VALUE: D:\\Program Files (x86)\\GiD 13.1.8d\\gid.exe
 

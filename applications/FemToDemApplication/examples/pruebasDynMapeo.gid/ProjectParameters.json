@@ -4,16 +4,17 @@
         "plane_state":                    "Plane_Strain",
         "mesh_optimality_criteria":       "Global_Error_Equidistribution",
         "permissible_error":               0.09,
-        "refinement_frequency":            2.0,
-        "gid_path":                       "F:\\Program Files\\GiD\\GiD 13.1.7d\\gid.exe"
+        "refinement_frequency":            4.0,
+        "Mapping_Procedure":              "Closest_Point_Transfer",
+        "gid_path":                       "D:\\Program Files (x86)\\GiD 13.1.8d\\gid.exe"
     },
    "problem_data": {
         "problem_name":         "pruebasDynMapeo",
         "model_part_name":      "Structure",
         "domain_size":          2,
         "start_time":           0.0,
-        "end_time":             5.0,
-        "time_step":            2.0,
+        "end_time":             10.0,
+        "time_step":            1.0,
         "echo_level":           0
     },
    "solver_settings": {

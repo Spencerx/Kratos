@@ -97,10 +97,11 @@ public:
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     
     // Constructor
-    MappingVariablesProcess(ModelPart& r_model_part_old, ModelPart& r_model_part_new, std::string imposed_displacement) :
+    MappingVariablesProcess(ModelPart& r_model_part_old, ModelPart& r_model_part_new, std::string imposed_displacement, std::string Mapping_Procedure) :
      mmodel_part_old(r_model_part_old), mmodel_part_new(r_model_part_new)
     {
         mImposedDisplacement = imposed_displacement;
+        mMappingProcedure    = Mapping_Procedure;
     }
     
     //------------------------------------------------------------------------------------
@@ -136,6 +137,7 @@ protected:
     ModelPart& mmodel_part_new;
     
     std::string mImposedDisplacement;
+	std::string mMappingProcedure;
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -258,140 +260,82 @@ protected:
         bool IsInside;
         
         //Locate new nodes inside old elements and interpolate displacements.  
-        //Triangles2D3N
-        //if((*mmodel_part_old.Elements().ptr_begin())->GetGeometry().PointsNumber() == 3)
-        //{
-            ElementDisplacements = ZeroVector(3);
-            ElementVelocities    = ZeroVector(3);
-            ElementAccelerations = ZeroVector(3);
+        ElementDisplacements = ZeroVector(3);
+        ElementVelocities    = ZeroVector(3);
+        ElementAccelerations = ZeroVector(3);
 
-            for(unsigned int i = 0; i < NodeNewVector.size(); i++)
+        for(unsigned int i = 0; i < NodeNewVector.size(); i++)
+        {
+            Element::GeometryType::PointType& NodeNew_i = NodeNewVector[i]->rNode;
+            Row = NodeNewVector[i] -> Row;
+            Column = NodeNewVector[i] -> Column;
+            const Element::GeometryType::CoordinatesArrayType NodeGlobalCoordinates = NodeNew_i.Coordinates(); //Coordinates of new nodes are still in the original position
+            IsInside = false;
+            
+            for(unsigned int j = 0; j < ElementOldMatrix[Row][Column].ElementOldVector.size(); j++)
             {
-                Element::GeometryType::PointType& NodeNew_i = NodeNewVector[i]->rNode;
-                Row = NodeNewVector[i] -> Row;
-                Column = NodeNewVector[i] -> Column;
-                const Element::GeometryType::CoordinatesArrayType NodeGlobalCoordinates = NodeNew_i.Coordinates(); //Coordinates of new nodes are still in the original position
-                IsInside = false;
-                
+                pElementOld = ElementOldMatrix[Row][Column].ElementOldVector[j];
+                IsInside = pElementOld->GetGeometry().IsInside(NodeGlobalCoordinates, NodeLocalCoordinates); //Checks whether the global coordinates fall inside the original old element
+                if(IsInside)  break;                                                                        
+            }
+    
+            if(IsInside == false) //TODO: cal??
+            {
                 for(unsigned int j = 0; j < ElementOldMatrix[Row][Column].ElementOldVector.size(); j++)
                 {
                     pElementOld = ElementOldMatrix[Row][Column].ElementOldVector[j];
-                    IsInside = pElementOld->GetGeometry().IsInside(NodeGlobalCoordinates, NodeLocalCoordinates); //Checks whether the global coordinates fall inside the original old element
-                    if(IsInside)  break;                                                                        
+                    pElementOld->GetGeometry().IsInside(NodeGlobalCoordinates,NodeLocalCoordinates);
+                    if(((NodeLocalCoordinates[0]+Tolerance)>=0)&&((NodeLocalCoordinates[1]+Tolerance)>=0)&&((NodeLocalCoordinates[1]-Tolerance)<=(1-NodeLocalCoordinates[0])))  break;
                 }
-        
-                if(IsInside == false) //TODO: cal??
-                {
-                    for(unsigned int j = 0; j < ElementOldMatrix[Row][Column].ElementOldVector.size(); j++)
-                    {
-                        pElementOld = ElementOldMatrix[Row][Column].ElementOldVector[j];
-                        pElementOld->GetGeometry().IsInside(NodeGlobalCoordinates,NodeLocalCoordinates);
-                        if(((NodeLocalCoordinates[0]+Tolerance)>=0)&&((NodeLocalCoordinates[1]+Tolerance)>=0)&&((NodeLocalCoordinates[1]-Tolerance)<=(1-NodeLocalCoordinates[0])))  break;
-                    }
-                }
-        
-                ElementShapeFunctions = this->TriangleShapeFunctions(NodeLocalCoordinates[0], NodeLocalCoordinates[1]);
-        
-                if( (NodeNew_i.pGetDof(DISPLACEMENT_X))->IsFixed() == false )
-                {
-                    ElementDisplacements[0] = pElementOld->GetGeometry().GetPoint(0).FastGetSolutionStepValue(DISPLACEMENT)[0];
-                    ElementDisplacements[1] = pElementOld->GetGeometry().GetPoint(1).FastGetSolutionStepValue(DISPLACEMENT)[0];
-                    ElementDisplacements[2] = pElementOld->GetGeometry().GetPoint(2).FastGetSolutionStepValue(DISPLACEMENT)[0];
-                    NodeNew_i.FastGetSolutionStepValue(DISPLACEMENT)[0] = inner_prod(ElementShapeFunctions,ElementDisplacements);
-
-                    if (mmodel_part_old.GetProcessInfo()[IS_DYNAMIC] == 1)  // Mapping of velocities and accelerations
-                    {
-                        ElementVelocities[0] = pElementOld->GetGeometry().GetPoint(0).FastGetSolutionStepValue(VELOCITY)[0];
-                        ElementVelocities[1] = pElementOld->GetGeometry().GetPoint(1).FastGetSolutionStepValue(VELOCITY)[0];
-                        ElementVelocities[2] = pElementOld->GetGeometry().GetPoint(2).FastGetSolutionStepValue(VELOCITY)[0];
-                        NodeNew_i.FastGetSolutionStepValue(VELOCITY)[0] = inner_prod(ElementShapeFunctions,ElementVelocities);
-
-                        ElementAccelerations[0] = pElementOld->GetGeometry().GetPoint(0).FastGetSolutionStepValue(ACCELERATION)[0];
-                        ElementAccelerations[1] = pElementOld->GetGeometry().GetPoint(1).FastGetSolutionStepValue(ACCELERATION)[0];
-                        ElementAccelerations[2] = pElementOld->GetGeometry().GetPoint(2).FastGetSolutionStepValue(ACCELERATION)[0];
-                        NodeNew_i.FastGetSolutionStepValue(ACCELERATION)[0] = inner_prod(ElementShapeFunctions,ElementAccelerations);
-                    }
-                }
-                // else if( mImposedDisplacement == "Linearly_Incremented" )
-                //     NodeNew_i.FastGetSolutionStepValue(DISPLACEMENT)[0] = mmodel_part_old.GetProcessInfo()[TIME_STEPS] * NodeNew_i.FastGetSolutionStepValue(IMPOSED_DISPLACEMENT)[0];
-                
-                if( (NodeNew_i.pGetDof(DISPLACEMENT_Y))->IsFixed() == false )
-                {
-                    ElementDisplacements[0] = pElementOld->GetGeometry().GetPoint(0).FastGetSolutionStepValue(DISPLACEMENT)[1];
-                    ElementDisplacements[1] = pElementOld->GetGeometry().GetPoint(1).FastGetSolutionStepValue(DISPLACEMENT)[1];
-                    ElementDisplacements[2] = pElementOld->GetGeometry().GetPoint(2).FastGetSolutionStepValue(DISPLACEMENT)[1];
-                    NodeNew_i.FastGetSolutionStepValue(DISPLACEMENT)[1] = inner_prod(ElementShapeFunctions,ElementDisplacements);
-
-                    if (mmodel_part_old.GetProcessInfo()[IS_DYNAMIC] == 1)  // Mapping of velocities and accelerations
-                    {
-                        ElementVelocities[0] = pElementOld->GetGeometry().GetPoint(0).FastGetSolutionStepValue(VELOCITY)[1];
-                        ElementVelocities[1] = pElementOld->GetGeometry().GetPoint(1).FastGetSolutionStepValue(VELOCITY)[1];
-                        ElementVelocities[2] = pElementOld->GetGeometry().GetPoint(2).FastGetSolutionStepValue(VELOCITY)[1];
-                        NodeNew_i.FastGetSolutionStepValue(VELOCITY)[1] = inner_prod(ElementShapeFunctions,ElementVelocities);
-
-                        ElementAccelerations[0] = pElementOld->GetGeometry().GetPoint(0).FastGetSolutionStepValue(ACCELERATION)[1];
-                        ElementAccelerations[1] = pElementOld->GetGeometry().GetPoint(1).FastGetSolutionStepValue(ACCELERATION)[1];
-                        ElementAccelerations[2] = pElementOld->GetGeometry().GetPoint(2).FastGetSolutionStepValue(ACCELERATION)[1];
-                        NodeNew_i.FastGetSolutionStepValue(ACCELERATION)[1] = inner_prod(ElementShapeFunctions,ElementAccelerations);
-                    }
-                }
-             //     else if( mImposedDisplacement == "Linearly_Incremented" )
-             //         NodeNew_i.FastGetSolutionStepValue(DISPLACEMENT)[1] = mmodel_part_old.GetProcessInfo()[TIME_STEPS] * NodeNew_i.FastGetSolutionStepValue(IMPOSED_DISPLACEMENT)[1];
             }
-        //}
-        // else //Quadrilateral2D4N
-        // {
-        //     ElementDisplacements = ZeroVector(4);
-        //     for(unsigned int i = 0; i < NodeNewVector.size(); i++)
-        //     {
-        //         Element::GeometryType::PointType& NodeNew_i = NodeNewVector[i]->rNode;
-        //         Row = NodeNewVector[i]->Row;
-        //         Column = NodeNewVector[i]->Column;
-        //         const Element::GeometryType::CoordinatesArrayType NodeGlobalCoordinates = NodeNew_i.Coordinates();
-        //         IsInside = false;
-        
-        //         for(unsigned int j = 0; j < ElementOldMatrix[Row][Column].ElementOldVector.size(); j++)
-        //         {
-        //             pElementOld = ElementOldMatrix[Row][Column].ElementOldVector[j];
-        //             IsInside = pElementOld->GetGeometry().IsInside(NodeGlobalCoordinates,NodeLocalCoordinates);
-        //             if(IsInside) break;
-        //         }
+    
+            ElementShapeFunctions = this->TriangleShapeFunctions(NodeLocalCoordinates[0], NodeLocalCoordinates[1]);
+    
+            if( (NodeNew_i.pGetDof(DISPLACEMENT_X))->IsFixed() == false )
+            {
+                ElementDisplacements[0] = pElementOld->GetGeometry().GetPoint(0).FastGetSolutionStepValue(DISPLACEMENT)[0];
+                ElementDisplacements[1] = pElementOld->GetGeometry().GetPoint(1).FastGetSolutionStepValue(DISPLACEMENT)[0];
+                ElementDisplacements[2] = pElementOld->GetGeometry().GetPoint(2).FastGetSolutionStepValue(DISPLACEMENT)[0];
+                NodeNew_i.FastGetSolutionStepValue(DISPLACEMENT)[0] = inner_prod(ElementShapeFunctions,ElementDisplacements);
 
-        //         if(IsInside==false) //TODO: cal??
-        //         {
-        //             for(unsigned int j = 0; j < ElementOldMatrix[Row][Column].ElementOldVector.size(); j++)
-        //             {
-        //                 pElementOld = ElementOldMatrix[Row][Column].ElementOldVector[j];
-        //                 pElementOld->GetGeometry().IsInside(NodeGlobalCoordinates,NodeLocalCoordinates);
-        //                 if(((NodeLocalCoordinates[0]+Tolerance)>=-1)&&((NodeLocalCoordinates[0]-Tolerance)<=1)&&((NodeLocalCoordinates[1]+Tolerance)>=-1)&&((NodeLocalCoordinates[1]-Tolerance)<=1))  break;
-        //             }
-        //         }
-        
-        //         ElementShapeFunctions = this->QuadrilateralShapeFunctions(NodeLocalCoordinates[0],NodeLocalCoordinates[1]);
-        
-        //         if( (NodeNew_i.pGetDof(DISPLACEMENT_X))->IsFixed() == false )
-        //         {
-        //             ElementDisplacements[0] = pElementOld->GetGeometry().GetPoint(0).FastGetSolutionStepValue(DISPLACEMENT)[0];
-        //             ElementDisplacements[1] = pElementOld->GetGeometry().GetPoint(1).FastGetSolutionStepValue(DISPLACEMENT)[0];
-        //             ElementDisplacements[2] = pElementOld->GetGeometry().GetPoint(2).FastGetSolutionStepValue(DISPLACEMENT)[0];
-        //             ElementDisplacements[3] = pElementOld->GetGeometry().GetPoint(3).FastGetSolutionStepValue(DISPLACEMENT)[0];
-        //             NodeNew_i.FastGetSolutionStepValue(DISPLACEMENT)[0] = inner_prod(ElementShapeFunctions,ElementDisplacements);
-        //         }
-        //         else if( mImposedDisplacement == "Linearly_Incremented" )
-        //             NodeNew_i.FastGetSolutionStepValue(DISPLACEMENT)[0] = mmodel_part_old.GetProcessInfo()[TIME_STEPS]*NodeNew_i.FastGetSolutionStepValue(IMPOSED_DISPLACEMENT)[0];
+                if (mmodel_part_old.GetProcessInfo()[IS_DYNAMIC] == 1)  // Mapping of velocities and accelerations
+                {
+                    ElementVelocities[0] = pElementOld->GetGeometry().GetPoint(0).FastGetSolutionStepValue(VELOCITY)[0];
+                    ElementVelocities[1] = pElementOld->GetGeometry().GetPoint(1).FastGetSolutionStepValue(VELOCITY)[0];
+                    ElementVelocities[2] = pElementOld->GetGeometry().GetPoint(2).FastGetSolutionStepValue(VELOCITY)[0];
+                    NodeNew_i.FastGetSolutionStepValue(VELOCITY)[0] = inner_prod(ElementShapeFunctions,ElementVelocities);
 
-        //         if( (NodeNew_i.pGetDof(DISPLACEMENT_Y))->IsFixed()==false )
-        //         {
-        //             ElementDisplacements[0] = pElementOld->GetGeometry().GetPoint(0).FastGetSolutionStepValue(DISPLACEMENT)[1];
-        //             ElementDisplacements[1] = pElementOld->GetGeometry().GetPoint(1).FastGetSolutionStepValue(DISPLACEMENT)[1];
-        //             ElementDisplacements[2] = pElementOld->GetGeometry().GetPoint(2).FastGetSolutionStepValue(DISPLACEMENT)[1];
-        //             ElementDisplacements[3] = pElementOld->GetGeometry().GetPoint(3).FastGetSolutionStepValue(DISPLACEMENT)[1];
-        //             NodeNew_i.FastGetSolutionStepValue(DISPLACEMENT)[1] = inner_prod(ElementShapeFunctions,ElementDisplacements);
-        //         }
-        //         else if( mImposedDisplacement == "Linearly_Incremented" )
-        //             NodeNew_i.FastGetSolutionStepValue(DISPLACEMENT)[1] = mmodel_part_old.GetProcessInfo()[TIME_STEPS]*NodeNew_i.FastGetSolutionStepValue(IMPOSED_DISPLACEMENT)[1];
-        //     }
-        // }
+                    ElementAccelerations[0] = pElementOld->GetGeometry().GetPoint(0).FastGetSolutionStepValue(ACCELERATION)[0];
+                    ElementAccelerations[1] = pElementOld->GetGeometry().GetPoint(1).FastGetSolutionStepValue(ACCELERATION)[0];
+                    ElementAccelerations[2] = pElementOld->GetGeometry().GetPoint(2).FastGetSolutionStepValue(ACCELERATION)[0];
+                    NodeNew_i.FastGetSolutionStepValue(ACCELERATION)[0] = inner_prod(ElementShapeFunctions,ElementAccelerations);
+                }
+            }
+            // else if( mImposedDisplacement == "Linearly_Incremented" )
+            //     NodeNew_i.FastGetSolutionStepValue(DISPLACEMENT)[0] = mmodel_part_old.GetProcessInfo()[TIME_STEPS] * NodeNew_i.FastGetSolutionStepValue(IMPOSED_DISPLACEMENT)[0];
+            
+            if( (NodeNew_i.pGetDof(DISPLACEMENT_Y))->IsFixed() == false )
+            {
+                ElementDisplacements[0] = pElementOld->GetGeometry().GetPoint(0).FastGetSolutionStepValue(DISPLACEMENT)[1];
+                ElementDisplacements[1] = pElementOld->GetGeometry().GetPoint(1).FastGetSolutionStepValue(DISPLACEMENT)[1];
+                ElementDisplacements[2] = pElementOld->GetGeometry().GetPoint(2).FastGetSolutionStepValue(DISPLACEMENT)[1];
+                NodeNew_i.FastGetSolutionStepValue(DISPLACEMENT)[1] = inner_prod(ElementShapeFunctions,ElementDisplacements);
+
+                if (mmodel_part_old.GetProcessInfo()[IS_DYNAMIC] == 1)  // Mapping of velocities and accelerations
+                {
+                    ElementVelocities[0] = pElementOld->GetGeometry().GetPoint(0).FastGetSolutionStepValue(VELOCITY)[1];
+                    ElementVelocities[1] = pElementOld->GetGeometry().GetPoint(1).FastGetSolutionStepValue(VELOCITY)[1];
+                    ElementVelocities[2] = pElementOld->GetGeometry().GetPoint(2).FastGetSolutionStepValue(VELOCITY)[1];
+                    NodeNew_i.FastGetSolutionStepValue(VELOCITY)[1] = inner_prod(ElementShapeFunctions,ElementVelocities);
+
+                    ElementAccelerations[0] = pElementOld->GetGeometry().GetPoint(0).FastGetSolutionStepValue(ACCELERATION)[1];
+                    ElementAccelerations[1] = pElementOld->GetGeometry().GetPoint(1).FastGetSolutionStepValue(ACCELERATION)[1];
+                    ElementAccelerations[2] = pElementOld->GetGeometry().GetPoint(2).FastGetSolutionStepValue(ACCELERATION)[1];
+                    NodeNew_i.FastGetSolutionStepValue(ACCELERATION)[1] = inner_prod(ElementShapeFunctions,ElementAccelerations);
+                }
+            }
+        }
+       
     
         //Deallocate memory
         for(int i=0; i < NRows; i++)
@@ -401,7 +345,7 @@ protected:
         for(unsigned int i = 0; i < NodeNewVector.size(); i++)
             delete NodeNewVector[i];
     
-        std::cout << "Nodal Displacements Mapped" << std::endl;
+        std::cout << "-- Nodal Displacements Mapped --" << std::endl;
     
     } //NodalVariablesMapping_End
 
@@ -432,13 +376,11 @@ protected:
 
     void GaussPointStateVariableMapping(const double& X_max, const double& X_min, const double& Y_max, const double& Y_min, const double& rCharacteristicLength, const double& rDamageThreshold)
     {
-       // std::vector<ConstitutiveLaw::Pointer> ConstitutiveLawVector;
         int Row, Column;
         double X_me, Y_me, X_other, Y_other, Distance;
         Element::Pointer Me;
         Element::Pointer Other;
         Vector Trian_GPLocalCoord = ZeroVector(3);
-        //std::vector<Vector> Quad_GPLocalCoordVector(4);
         Element::GeometryType::CoordinatesArrayType GPGlobalCoord;
         std::vector<GaussPointNew*> GaussPointNewVector;
 
@@ -452,213 +394,187 @@ protected:
         pGaussPointOldMatrix = new GaussPointOldCell*[NRows];
         for(int i=0;i<NRows;i++)  pGaussPointOldMatrix[i] = new GaussPointOldCell[NColumns];
         
-        //Locate old Gauss points in cells
-        //Triangles2D3N
-        //if((*mmodel_part_old.Elements().ptr_begin())->GetGeometry().PointsNumber() == 3)
-       // {
-            // GP local coordinates
-            Trian_GPLocalCoord[0] = 1 / 3;
-            Trian_GPLocalCoord[1] = 1 / 3;
-            const Element::GeometryType::CoordinatesArrayType GPLocalCoord = Trian_GPLocalCoord;
-            
-            for(ElementsArrayType::ptr_iterator it = mmodel_part_old.Elements().ptr_begin(); it != mmodel_part_old.Elements().ptr_end(); ++it)
-            {
-                //(*it)->GetValueOnIntegrationPoints(CONSTITUTIVE_LAW_POINTER,ConstitutiveLawVector,mmodel_part_old.GetProcessInfo());
-
-                (*it)->GetGeometry().GlobalCoordinates(GPGlobalCoord,GPLocalCoord);
-
-                X_me = GPGlobalCoord[0];
-                Y_me = GPGlobalCoord[1];
-
-                Row    = int((Y_max - Y_me) / RowSize);
-                Column = int((X_me - X_min) / ColumnSize);
-
-                if(Row == NRows) Row = NRows - 1;
-                if(Column == NColumns) Column = NColumns - 1;
-
-                //pGaussPointOldMatrix[Row][Column].GaussPointOldVector.push_back(GaussPointOld(ConstitutiveLawVector[0], X_me, Y_me));
-                pGaussPointOldMatrix[Row][Column].GaussPointOldVector.push_back(GaussPointOld(*it, X_me, Y_me));
-            }
-        //}
-        // else //Quadrilateral2D4N
-        // {
-        //     // GP local coordinates
-        //     Quad_GPLocalCoordVector[0] = ZeroVector(3);
-        //     Quad_GPLocalCoordVector[0][0] = -sqrt(3)/3;
-        //     Quad_GPLocalCoordVector[0][1] = -sqrt(3)/3;
-        //     Quad_GPLocalCoordVector[1] = ZeroVector(3);
-        //     Quad_GPLocalCoordVector[1][0] = sqrt(3)/3;
-        //     Quad_GPLocalCoordVector[1][1] = -sqrt(3)/3;
-        //     Quad_GPLocalCoordVector[2] = ZeroVector(3);
-        //     Quad_GPLocalCoordVector[2][0] = sqrt(3)/3;
-        //     Quad_GPLocalCoordVector[2][1] = sqrt(3)/3;
-        //     Quad_GPLocalCoordVector[3] = ZeroVector(3);
-        //     Quad_GPLocalCoordVector[3][0] = -sqrt(3)/3;
-        //     Quad_GPLocalCoordVector[3][1] = sqrt(3)/3;
-      
-        //     for(ElementsArrayType::ptr_iterator it = mmodel_part_old.Elements().ptr_begin(); it != mmodel_part_old.Elements().ptr_end(); ++it)
-        //     {
-        //         (*it)->GetValueOnIntegrationPoints(CONSTITUTIVE_LAW_POINTER,ConstitutiveLawVector,mmodel_part_old.GetProcessInfo());
-
-        //         for(unsigned int i = 0; i < 4; i++)
-        //         {
-        //             const Element::GeometryType::CoordinatesArrayType GPLocalCoord = Quad_GPLocalCoordVector[i];
-            
-        //             (*it)->GetGeometry().GlobalCoordinates(GPGlobalCoord,GPLocalCoord);
-            
-        //             X_me = GPGlobalCoord[0];
-        //             Y_me = GPGlobalCoord[1];
-            
-        //             Row = int((Y_max-Y_me)/RowSize);
-        //             Column = int((X_me-X_min)/ColumnSize);
-                    
-        //             if(Row==NRows) Row = NRows-1;
-        //             if(Column==NColumns) Column = NColumns-1;
-                    
-        //             pGaussPointOldMatrix[Row][Column].GaussPointOldVector.push_back(GaussPointOld(ConstitutiveLawVector[i],X_me,Y_me));
-        //         }
-        //     }
-        // }
-    
-        //Locate new Gauss points in cells
-        //Triangles2D3N
-        //if((*mmodel_part_new.Elements().ptr_begin())->GetGeometry().PointsNumber()==3)
-        //{
-            //const Element::GeometryType::CoordinatesArrayType GPLocalCoord = Trian_GPLocalCoord;
-            
-            for(ElementsArrayType::ptr_iterator it = mmodel_part_new.Elements().ptr_begin(); it != mmodel_part_new.Elements().ptr_end(); ++it)
-            {
-                //(*it)->GetValueOnIntegrationPoints(CONSTITUTIVE_LAW_POINTER,ConstitutiveLawVector,mmodel_part_new.GetProcessInfo());
-                
-                (*it)->GetGeometry().GlobalCoordinates(GPGlobalCoord,GPLocalCoord);
-                
-                X_me = GPGlobalCoord[0];
-                Y_me = GPGlobalCoord[1];
-
-                Row = int((Y_max - Y_me) / RowSize);
-                Column = int((X_me - X_min) / ColumnSize);
-
-                if(Row == NRows) Row = NRows - 1;
-                if(Column == NColumns) Column = NColumns - 1;
-
-                //GaussPointNewVector.push_back(new GaussPointNew(ConstitutiveLawVector[0], X_me, Y_me, Row, Column));
-                GaussPointNewVector.push_back(new GaussPointNew(*it, X_me, Y_me, Row, Column));
-            }
-        //}
-        // else //Quadrilateral2D4N
-        // {
-        //     for(ElementsArrayType::ptr_iterator it = mmodel_part_new.Elements().ptr_begin(); it != mmodel_part_new.Elements().ptr_end(); ++it)
-        //     {
-        //         (*it)->GetValueOnIntegrationPoints(CONSTITUTIVE_LAW_POINTER,ConstitutiveLawVector,mmodel_part_new.GetProcessInfo());
-
-        //         for(unsigned int i = 0; i < 4; i++)
-        //         { 
-        //             const Element::GeometryType::CoordinatesArrayType GPLocalCoord = Quad_GPLocalCoordVector[i];
-            
-        //             (*it)->GetGeometry().GlobalCoordinates(GPGlobalCoord,GPLocalCoord);
-
-        //             X_me = GPGlobalCoord[0];
-        //             Y_me = GPGlobalCoord[1];
-
-        //             Row = int((Y_max-Y_me)/RowSize);
-        //             Column = int((X_me-X_min)/ColumnSize);
-
-        //             if(Row==NRows) Row = NRows-1;
-        //             if(Column==NColumns) Column = NColumns-1;
-
-        //             GaussPointNewVector.push_back(new GaussPointNew(ConstitutiveLawVector[i],X_me, Y_me,Row,Column));
-        //         }
-        //     }
-        // }   
-    
-
-        //Transfer state variables from old Gauss points to new Gauss Points (nonlocal average)
-        double IntegrationCoefficient;     //StateVariable, Numerator, WeightingFunctionDenominator;
-        double DamageVariable, StressThreshold, DamageNumerator, ThresholdNumerator, WeightingFunctionDenominator;
-
-        for(unsigned int i = 0; i < GaussPointNewVector.size(); i++)
+        
+        // GP local coordinates
+        Trian_GPLocalCoord[0] = 1 / 3;
+        Trian_GPLocalCoord[1] = 1 / 3;
+        const Element::GeometryType::CoordinatesArrayType GPLocalCoord = Trian_GPLocalCoord;
+        
+        // Locate old elements in cells
+        for(ElementsArrayType::ptr_iterator it = mmodel_part_old.Elements().ptr_begin(); it != mmodel_part_old.Elements().ptr_end(); ++it)
         {
-			Me   = GaussPointNewVector[i]->pElement;
-            X_me = GaussPointNewVector[i]->X_coord;
-            Y_me = GaussPointNewVector[i]->Y_coord;
-            Row  = GaussPointNewVector[i]->Row;
-            Column = GaussPointNewVector[i]->Column;
-            DamageNumerator = 0.0;
-            ThresholdNumerator  = 0.0;
-            WeightingFunctionDenominator = 0.0;
-            
-            //Search in my cell
-            for(unsigned int j = 0; j < pGaussPointOldMatrix[Row][Column].GaussPointOldVector.size(); j++)
-            {
-				Other   = pGaussPointOldMatrix[Row][Column].GaussPointOldVector[j].pElement;
-                X_other = pGaussPointOldMatrix[Row][Column].GaussPointOldVector[j].X_coord;
-                Y_other = pGaussPointOldMatrix[Row][Column].GaussPointOldVector[j].Y_coord;
-        
-                Distance = sqrt((X_other - X_me) * (X_other - X_me) + (Y_other - Y_me) * (Y_other - Y_me));
+            (*it)->GetGeometry().GlobalCoordinates(GPGlobalCoord,GPLocalCoord);
 
-                if(Distance <= rCharacteristicLength) //TODO: es podria calcular amb tots els de la teva cel·la...
-                {
-                    IntegrationCoefficient = Other->GetValue(INTEGRATION_COEFFICIENT);
-                    DamageVariable = Other->GetValue(DAMAGE_ELEMENT);
-                    StressThreshold = Other->GetValue(STRESS_THRESHOLD);
-                    
-                    // Mapping of the damage and the threshold GP variables
-                    DamageNumerator    += IntegrationCoefficient * exp(- 4 * Distance * Distance / (rCharacteristicLength * rCharacteristicLength)) * DamageVariable;
-                    ThresholdNumerator += IntegrationCoefficient * exp(- 4 * Distance * Distance / (rCharacteristicLength * rCharacteristicLength)) * StressThreshold;
-                    WeightingFunctionDenominator += IntegrationCoefficient * exp(- 4 * Distance * Distance / (rCharacteristicLength * rCharacteristicLength));
-                }
-            }
-            
-            //Search in adjacent cells
-			if (sqrt((X_min + ColumnSize*(Column + 1) - X_me)*(X_min + ColumnSize*(Column + 1) - X_me) + (Y_max - RowSize*(Row + 1) - Y_me)*(Y_max - RowSize*(Row + 1) - Y_me)) < rCharacteristicLength)
-            {
-				if ((Row + 1) < NRows)  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row + 1][Column], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
-				if ((Column + 1) < NColumns)  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row][Column + 1], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
-				if (((Row + 1) < NRows) && ((Column + 1) < NColumns))  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row + 1][Column + 1], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
-            }
-			else if (sqrt((X_min + ColumnSize*(Column)-X_me)*(X_min + ColumnSize*(Column)-X_me) + (Y_max - RowSize*(Row + 1) - Y_me)*(Y_max - RowSize*(Row + 1) - Y_me)) < rCharacteristicLength)
-            {
-				if ((Row + 1) < NRows)  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row + 1][Column], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
-				if ((Column - 1) >= 0)  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row][Column - 1], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
-				if (((Row + 1) < NRows) && ((Column - 1) >= 0))  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row + 1][Column - 1], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
-            }
-			else if (sqrt((X_min + ColumnSize*(Column)-X_me)*(X_min + ColumnSize*(Column)-X_me) + (Y_max - RowSize*(Row)-Y_me)*(Y_max - RowSize*(Row)-Y_me)) < rCharacteristicLength)
-            {
-				if ((Row - 1) >= 0)  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row - 1][Column], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
-				if ((Column - 1) >= 0)  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row][Column - 1], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
-				if (((Row - 1) >= 0) && ((Column - 1) >= 0))  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row - 1][Column - 1], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
-            }
-			else if (sqrt((X_min + ColumnSize*(Column + 1) - X_me)*(X_min + ColumnSize*(Column + 1) - X_me) + (Y_max - RowSize*(Row)-Y_me)*(Y_max - RowSize*(Row)-Y_me)) < rCharacteristicLength)
-            {
-				if ((Row - 1) >= 0)  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row - 1][Column], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
-				if ((Column + 1) < NColumns)  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row][Column + 1], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
-				if (((Row - 1) >= 0) && ((Column + 1) < NColumns))  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row - 1][Column + 1], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
-            }
-            else
-            {
-				if ((int((X_me - X_min + rCharacteristicLength) / ColumnSize) > Column) && ((Column + 1) < NColumns))  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row][Column + 1], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
-				else if ((int((X_me - X_min - rCharacteristicLength) / ColumnSize) < Column) && ((Column - 1) >= 0))  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row][Column - 1], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
-        
-				if ((int((Y_max - Y_me + rCharacteristicLength) / RowSize) > Row) && ((Row + 1) < NRows))  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row + 1][Column], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
-				else if ((int((Y_max - Y_me - rCharacteristicLength) / RowSize) < Row) && ((Row - 1) >= 0))  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row - 1][Column], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
-            }
-      
-            if (fabs(WeightingFunctionDenominator) < 1e-15) 
-            { // TODO-> CHECK WHY
-                StressThreshold = rDamageThreshold;
-                DamageVariable = 0.0;
-            }
-            else 
-            {
-                DamageVariable  = DamageNumerator / WeightingFunctionDenominator;
-                StressThreshold = ThresholdNumerator / WeightingFunctionDenominator;
-            }
+            X_me = GPGlobalCoord[0];
+            Y_me = GPGlobalCoord[1];
 
-			Me->SetValue(DAMAGE_ELEMENT, DamageVariable);
-			Me->SetValue(STRESS_THRESHOLD, StressThreshold);
+            Row    = int((Y_max - Y_me) / RowSize);
+            Column = int((X_me - X_min) / ColumnSize);
+
+            if(Row == NRows) Row = NRows - 1;
+            if(Column == NColumns) Column = NColumns - 1;
+
+            pGaussPointOldMatrix[Row][Column].GaussPointOldVector.push_back(GaussPointOld(*it, X_me, Y_me));
         }
 
-        //Deallocate memory
+        // Locate New elements in cells
+        for(ElementsArrayType::ptr_iterator it = mmodel_part_new.Elements().ptr_begin(); it != mmodel_part_new.Elements().ptr_end(); ++it)
+        {
+            (*it)->GetGeometry().GlobalCoordinates(GPGlobalCoord,GPLocalCoord);
+            
+            X_me = GPGlobalCoord[0];
+            Y_me = GPGlobalCoord[1];
+
+            Row = int((Y_max - Y_me) / RowSize);
+            Column = int((X_me - X_min) / ColumnSize);
+
+            if(Row == NRows) Row = NRows - 1;
+            if(Column == NColumns) Column = NColumns - 1;
+            GaussPointNewVector.push_back(new GaussPointNew(*it, X_me, Y_me, Row, Column));
+        }  
+    
+        if (mMappingProcedure == "Non_Local_Average")
+        {
+            //Transfer state variables from old Gauss points to new Gauss Points (nonlocal average)
+            double IntegrationCoefficient;     //StateVariable, Numerator, WeightingFunctionDenominator;
+            double DamageVariable, StressThreshold, DamageNumerator, ThresholdNumerator, WeightingFunctionDenominator;
+
+            // Analize each new element in its own cell 
+            for(unsigned int i = 0; i < GaussPointNewVector.size(); i++)
+            {
+                Me   = GaussPointNewVector[i]->pElement;
+                X_me = GaussPointNewVector[i]->X_coord;
+                Y_me = GaussPointNewVector[i]->Y_coord;
+                Row  = GaussPointNewVector[i]->Row;
+                Column = GaussPointNewVector[i]->Column;
+                DamageNumerator = 0.0;
+                ThresholdNumerator  = 0.0;
+                WeightingFunctionDenominator = 0.0;
+                
+                // Loop over old elements inside the cell
+                for(unsigned int j = 0; j < pGaussPointOldMatrix[Row][Column].GaussPointOldVector.size(); j++)
+                {
+                    Other   = pGaussPointOldMatrix[Row][Column].GaussPointOldVector[j].pElement;
+                    X_other = pGaussPointOldMatrix[Row][Column].GaussPointOldVector[j].X_coord;
+                    Y_other = pGaussPointOldMatrix[Row][Column].GaussPointOldVector[j].Y_coord;
+            
+                    Distance = sqrt((X_other - X_me) * (X_other - X_me) + (Y_other - Y_me) * (Y_other - Y_me));
+
+                    if(Distance <= rCharacteristicLength) //TODO: es podria calcular amb tots els de la teva cel·la...
+                    {
+                        IntegrationCoefficient = Other->GetValue(INTEGRATION_COEFFICIENT);
+                        DamageVariable = Other->GetValue(DAMAGE_ELEMENT);
+                        StressThreshold = Other->GetValue(STRESS_THRESHOLD);
+                        
+                        // Mapping of the damage and the threshold GP variables
+                        DamageNumerator    += IntegrationCoefficient * exp(- 4 * Distance * Distance / (rCharacteristicLength * rCharacteristicLength)) * DamageVariable;
+                        ThresholdNumerator += IntegrationCoefficient * exp(- 4 * Distance * Distance / (rCharacteristicLength * rCharacteristicLength)) * StressThreshold;
+                        WeightingFunctionDenominator += IntegrationCoefficient * exp(- 4 * Distance * Distance / (rCharacteristicLength * rCharacteristicLength));
+                    }
+                }
+                
+                //Search in adjacent cells
+                if (sqrt((X_min + ColumnSize*(Column + 1) - X_me)*(X_min + ColumnSize*(Column + 1) - X_me) + (Y_max - RowSize*(Row + 1) - Y_me)*(Y_max - RowSize*(Row + 1) - Y_me)) < rCharacteristicLength)
+                {
+                    if ((Row + 1) < NRows)  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row + 1][Column], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
+                    if ((Column + 1) < NColumns)  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row][Column + 1], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
+                    if (((Row + 1) < NRows) && ((Column + 1) < NColumns))  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row + 1][Column + 1], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
+                }
+                else if (sqrt((X_min + ColumnSize*(Column)-X_me)*(X_min + ColumnSize*(Column)-X_me) + (Y_max - RowSize*(Row + 1) - Y_me)*(Y_max - RowSize*(Row + 1) - Y_me)) < rCharacteristicLength)
+                {
+                    if ((Row + 1) < NRows)  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row + 1][Column], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
+                    if ((Column - 1) >= 0)  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row][Column - 1], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
+                    if (((Row + 1) < NRows) && ((Column - 1) >= 0))  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row + 1][Column - 1], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
+                }
+                else if (sqrt((X_min + ColumnSize*(Column)-X_me)*(X_min + ColumnSize*(Column)-X_me) + (Y_max - RowSize*(Row)-Y_me)*(Y_max - RowSize*(Row)-Y_me)) < rCharacteristicLength)
+                {
+                    if ((Row - 1) >= 0)  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row - 1][Column], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
+                    if ((Column - 1) >= 0)  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row][Column - 1], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
+                    if (((Row - 1) >= 0) && ((Column - 1) >= 0))  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row - 1][Column - 1], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
+                }
+                else if (sqrt((X_min + ColumnSize*(Column + 1) - X_me)*(X_min + ColumnSize*(Column + 1) - X_me) + (Y_max - RowSize*(Row)-Y_me)*(Y_max - RowSize*(Row)-Y_me)) < rCharacteristicLength)
+                {
+                    if ((Row - 1) >= 0)  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row - 1][Column], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
+                    if ((Column + 1) < NColumns)  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row][Column + 1], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
+                    if (((Row - 1) >= 0) && ((Column + 1) < NColumns))  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row - 1][Column + 1], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
+                }
+                else
+                {
+                    if ((int((X_me - X_min + rCharacteristicLength) / ColumnSize) > Column) && ((Column + 1) < NColumns))  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row][Column + 1], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
+                    else if ((int((X_me - X_min - rCharacteristicLength) / ColumnSize) < Column) && ((Column - 1) >= 0))  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row][Column - 1], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
+            
+                    if ((int((Y_max - Y_me + rCharacteristicLength) / RowSize) > Row) && ((Row + 1) < NRows))  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row + 1][Column], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
+                    else if ((int((Y_max - Y_me - rCharacteristicLength) / RowSize) < Row) && ((Row - 1) >= 0))  this->SearchInAdjacentCell(GaussPointNewVector[i], pGaussPointOldMatrix[Row - 1][Column], DamageNumerator,ThresholdNumerator, WeightingFunctionDenominator, rCharacteristicLength);
+                }
+        
+                if (fabs(WeightingFunctionDenominator) < 1e-15) 
+                { // TODO-> CHECK WHY
+                    StressThreshold = rDamageThreshold;
+                    DamageVariable = 0.0;
+                }
+                else 
+                {
+                    DamageVariable  = DamageNumerator / WeightingFunctionDenominator;
+                    StressThreshold = ThresholdNumerator / WeightingFunctionDenominator;
+                }
+
+                Me->SetValue(DAMAGE_ELEMENT, DamageVariable);
+                Me->SetValue(STRESS_THRESHOLD, StressThreshold);
+            }
+
+        }
+        else // Closest_Point_Transfer
+        {
+            // Loop over new elements
+            for(unsigned int i = 0; i < GaussPointNewVector.size(); i++)
+            {
+                Me   = GaussPointNewVector[i]->pElement;
+                X_me = GaussPointNewVector[i]->X_coord;
+                Y_me = GaussPointNewVector[i]->Y_coord;
+                Row  = GaussPointNewVector[i]->Row;
+                Column = GaussPointNewVector[i]->Column;
+
+                double* Distance  = new double[pGaussPointOldMatrix[Row][Column].GaussPointOldVector.size()];
+                double* Damage    = new double[pGaussPointOldMatrix[Row][Column].GaussPointOldVector.size()];
+                double* Threshold = new double[pGaussPointOldMatrix[Row][Column].GaussPointOldVector.size()];
+                double damage, threshold;
+                
+                // Loop over old elements inside the cell
+                for (unsigned int j = 0; j < pGaussPointOldMatrix[Row][Column].GaussPointOldVector.size(); j++)
+                {
+                    Other   = pGaussPointOldMatrix[Row][Column].GaussPointOldVector[j].pElement;
+                    X_other = pGaussPointOldMatrix[Row][Column].GaussPointOldVector[j].X_coord;
+                    Y_other = pGaussPointOldMatrix[Row][Column].GaussPointOldVector[j].Y_coord;
+            
+                    Distance[j]  = sqrt((X_other - X_me) * (X_other - X_me) + (Y_other - Y_me) * (Y_other - Y_me));
+                    Damage[j]    = Other->GetValue(DAMAGE_ELEMENT);
+                    Threshold[j] = Other->GetValue(STRESS_THRESHOLD);
+                }
+
+                damage    = Damage[0];
+                threshold = Threshold[0];
+
+                // Select the closest point old element
+                for (int elem = 1; elem < pGaussPointOldMatrix[Row][Column].GaussPointOldVector.size(); elem++)
+                {
+                    if (Distance[elem] < Distance[elem - 1])
+                    {
+                        damage    = Damage[elem];
+                        threshold = Threshold[elem];
+                    }
+                }
+
+                Me->SetValue(DAMAGE_ELEMENT, damage);
+                Me->SetValue(STRESS_THRESHOLD, threshold);
+
+
+                delete[] Distance;
+                delete[] Damage;
+                delete[] Threshold;
+            }
+        }
+
+        // Deallocate memory
 		for (int i = 0;i < NRows;i++)
 			delete[] pGaussPointOldMatrix[i];
 		delete[] pGaussPointOldMatrix;
@@ -666,9 +582,13 @@ protected:
 		for (unsigned int i = 0;i < GaussPointNewVector.size(); i++)
 			delete GaussPointNewVector[i];
     
-        std::cout << "Gauss Point State Variable Mapped" << std::endl;
+        std::cout << "-- Gauss Point State Variable Mapped --" << std::endl;
+
+
+
+
     
-    }//GaussPointStateVariableMapping_End
+    } //GaussPointStateVariableMapping_End
 
     //------------------------------------------------------------------------------------
     
@@ -679,8 +599,9 @@ protected:
         double Y_me = pGaussPointNew->Y_coord;
     
         Element::Pointer Other;
-        double X_other, Y_other, Distance;
+		double X_other, Y_other;
 		double IntegrationCoefficient, DamageVariable, StressThreshold;
+		double Distance;
                     
 		for (unsigned int j = 0; j < NeighbourCell.GaussPointOldVector.size(); j++)
         {
@@ -693,7 +614,6 @@ protected:
             if(Distance <= rCharacteristicLength) //TODO: es podria calcular amb tots els de les cel·les vehines...
             {
                 IntegrationCoefficient = Other->GetValue(INTEGRATION_COEFFICIENT);
-                //StateVariable = Other->GetValue(STATE_VARIABLE,StateVariable);
                 DamageVariable = Other->GetValue(DAMAGE_ELEMENT);
                 StressThreshold = Other->GetValue(STRESS_THRESHOLD);
 
@@ -716,7 +636,7 @@ protected:
         //mmodel_part_new.GetProcessInfo()[TIME_STEPS] = mmodel_part_old.GetProcessInfo()[TIME_STEPS];
     }
 
-};//Class
+}; //Class
 
 } /* namespace Kratos.*/
 

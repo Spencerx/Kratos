@@ -280,29 +280,29 @@ class FEM_Solution(MainSolidFEM.Solution):
 
 		print(" [STEP:",self.step," TIME:",self.time,"]")
 
-		print("priemro")
-		Wait()
+		#print("priemro")
+		#Wait()
 
 		# processes to be executed at the begining of the solution step
 		self.model_processes.ExecuteInitializeSolutionStep()
-		print("segundo")
-		Wait()
+		#print("segundo")
+		#Wait()
 		self.GraphicalOutputExecuteInitializeSolutionStep()
-		print("tercero")
-		Wait()
+		#print("tercero")
+		#Wait()
 		self.solver.InitializeSolutionStep()
-		print("cuarto")
-		Wait()
+		#print("cuarto")
+		#Wait()
 
 #============================================================================================================================
 	def SolveSolutionStep(self):
 
 		self.clock_time = self.StartTimeMeasuring();
-		print("quinto")
-		Wait()
+		#print("quinto")
+		#Wait()
 		self.solver.Solve()
-		print("sexto")
-		Wait()
+		#print("sexto")
+		#Wait()
 
 		# ************* PRINTS DE PRUEBA ******************************************* 
 		#print("*************************************")
@@ -381,7 +381,13 @@ class FEM_Solution(MainSolidFEM.Solution):
 				self.solver   = solver_module.CreateSolver(self.main_model_part, self.ProjectParameters["solver_settings"])
 				self.InitializeAfterAMR()
 
+				# test
+				print("antes de imprimir")
+				Wait()
+				self.GraphicalOutputPrintOutput()	
 
+
+			
 			elif(self.last_mesh):
 				self.AMR_util.Finalize(self.main_model_part,self.current_id)
 
@@ -391,7 +397,7 @@ class FEM_Solution(MainSolidFEM.Solution):
 
 		#print("NODOS: ", cont) # es correcto el nuevo mdpa
 		#print("computing model part",self.computing_model_part)
-		#print(self.main_model_part)
+		#print(" *********model part*******",self.main_model_part)
 		#print("tiempooo :", self.time)
 		print("************************")
 		Wait()
@@ -484,9 +490,10 @@ class FEM_Solution(MainSolidFEM.Solution):
 		
 		# Add variables (always before importing the model part)
 		self.solver.AddVariables()
-		
+		print("en main antes de import:", self.main_model_part.ProcessInfo[KratosMultiphysics.STEP])
 		# Read model_part (note: the buffer_size is set here) (restart is read here)
 		self.solver.ImportModelPart()
+		print("en main despeus de import:", self.main_model_part.ProcessInfo[KratosMultiphysics.STEP])
 
 		# Add dofs (always after importing the model part)
 		if((self.main_model_part.ProcessInfo).Has(KratosMultiphysics.IS_RESTARTED)):
@@ -572,29 +579,6 @@ class FEM_Solution(MainSolidFEM.Solution):
 
 if __name__ == "__main__": 
 	Solution().Run()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 #============================================================================================================================

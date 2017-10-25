@@ -85,36 +85,35 @@ namespace Kratos
 
 	void AleCornVelElement::InitializeSolutionStep(ProcessInfo& rCurrentProcessInfo)
 	{
-		//if (rCurrentProcessInfo[STEP] == 2)
-		//{
-		//	std::cout << "para" << std::endl;
-		//}
+
 		// After the mapping, the thresholds of the edges ( are equal to 0.0) are imposed equal to the IP threshold
-		double *thresholds = this->GetThresholds();
-		double ElementThreshold = this->Get_threshold();
+		double *thresholds      = this->GetThresholds();
+		double ElementThreshold = this->GetValue(STRESS_THRESHOLD);
 		
 		if (thresholds[0] == 0.0 && thresholds[1] == 0.0 && thresholds[2] == 0.0)
 		{
-			thresholds[0] = ElementThreshold;
-			thresholds[1] = ElementThreshold;
-			thresholds[2] = ElementThreshold;
+			this->Set_threshold(ElementThreshold, 0);
+			this->Set_threshold(ElementThreshold, 1);
+			this->Set_threshold(ElementThreshold, 2);
+
+			// if (rCurrentProcessInfo[STEP] > 1)
+			// {
+			// 	KRATOS_WATCH(ElementThreshold)
+			// 	KRATOS_WATCH(*this->GetThresholds())
+			// 	std::cout << " " << std::endl;
+			// }
 		}
 
 		// IDEM with the edge damages
 		double *DamageEdges   = this->GetDamages();
-		double DamageElement = this->Get_Convergeddamage();
+		double DamageElement  = this->GetValue(DAMAGE_ELEMENT);
 
 		if (DamageEdges[0] == 0.0 && DamageEdges[1] == 0.0 && DamageEdges[2] == 0.0)
 		{
-			DamageEdges[0] = DamageElement;
-			DamageEdges[1] = DamageElement;
-			DamageEdges[2] = DamageElement;
+			this->Set_Convergeddamages(DamageElement, 0);
+			this->Set_Convergeddamages(DamageElement, 1);
+			this->Set_Convergeddamages(DamageElement, 2);
 		}
-
-		//if (rCurrentProcessInfo[STEP] == 2)
-		//{
-		//	std::cout << "para" << std::endl;
-		//}
 
 	}
 
@@ -147,32 +146,15 @@ namespace Kratos
 		this->ResetNonConvergedVars();
 		this->SetToZeroIteration();
 
-		// computation of the equivalent damage threshold of the element for AMR mapping
+		// computation of the equivalent damage threshold and damage of the element for AMR mapping
 		double *thresholds = this->GetThresholds();
 		Vector TwoMaxValues;
 		this->Get2MaxValues(TwoMaxValues, thresholds[0], thresholds[1], thresholds[2]);
 		double EqThreshold = 0.5*(TwoMaxValues[0] + TwoMaxValues[1]);
 		this->SetValue(STRESS_THRESHOLD, EqThreshold); // AMR
 		this->Set_threshold(EqThreshold);
-
-		// if (damage_element > 0.0){
-		// 	std::cout << " ************************************" << std::endl;
-		// 	std::cout << " ************************************" << std::endl;
-		// 	KRATOS_WATCH(thresholds[0])
-		// 	KRATOS_WATCH(thresholds[1])
-		// 	KRATOS_WATCH(thresholds[2])
-		// 	std::cout << " ************************************" << std::endl;
-		// 	KRATOS_WATCH(EqThreshold)
-		// 	std::cout << " ************************************" << std::endl;
-		// 	std::cout << " ************************************" << std::endl;
-		// }
 		this->SetValue(DAMAGE_ELEMENT, damage_element);
 
-
-		//if (rCurrentProcessInfo[STEP] == 2)
-		//{
-		//	std::cout << "para" << std::endl;
-		//}
 	}
 
 	void AleCornVelElement::InitializeNonLinearIteration(ProcessInfo& rCurrentProcessInfo)
@@ -225,12 +207,6 @@ namespace Kratos
 		J = GetGeometry().Jacobian(J, mThisIntegrationMethod, DeltaPosition);
 
 
-
-		//if (rCurrentProcessInfo[STEP] == 2)
-		//{
-		//	std::cout << "para" << std::endl;
-		//}
-
 		// Loop Over Integration Points
 		for (unsigned int PointNumber = 0; PointNumber < integration_points.size(); PointNumber++)
 		{
@@ -279,11 +255,6 @@ namespace Kratos
 			this->CalculateDeformationMatrix(B, DN_DX);
 			this->SetBMatrix(B);
 
-
-			//if (rCurrentProcessInfo[STEP] == 2)
-			//{
-			//	std::cout << "para" << std::endl;
-			//}
 		}
 		KRATOS_CATCH("")
 
@@ -293,12 +264,6 @@ namespace Kratos
 	void AleCornVelElement::CalculateLocalSystem (MatrixType& rLeftHandSideMatrix, VectorType& rRightHandSideVector, ProcessInfo& rCurrentProcessInfo)
 	{
 		KRATOS_TRY
-
-			//if (rCurrentProcessInfo[STEP] == 2)
-			//{
-			//	std::cout << "para" << std::endl;
-			//}
-
 
 		const unsigned int number_of_nodes = GetGeometry().size();
 		const unsigned int dimension = GetGeometry().WorkingSpaceDimension();
@@ -321,11 +286,6 @@ namespace Kratos
 		J[0].resize(dimension, dimension, false);
 		noalias(J[0]) = ZeroMatrix(dimension, dimension);
 		J = GetGeometry().Jacobian(J, mThisIntegrationMethod, DeltaPosition);
-
-		//if (rCurrentProcessInfo[STEP] == 2)
-		//{
-		//	std::cout << "para" << std::endl;
-		//}
 		
 		for (unsigned int PointNumber = 0; PointNumber < integration_points.size(); PointNumber++)
 		{
@@ -352,10 +312,6 @@ namespace Kratos
 			WeakPointerVector< Element >& elem_neigb = this->GetValue(NEIGHBOUR_ELEMENTS);
 			if (elem_neigb.size() == 0) { KRATOS_THROW_ERROR(std::invalid_argument, " Neighbour Elements not calculated --> size = ", elem_neigb.size()) }
 
-			//if (rCurrentProcessInfo[STEP] == 2)
-			//{
-			//	std::cout << "para" << std::endl;
-			//}
 
 			// Compute damage on each edge of the element
 			double damage[3] = { 0,0,0 };
@@ -380,26 +336,7 @@ namespace Kratos
 				{
 					this->CalculateLchar(this, elem_neigb[cont], cont);
 				}
-
-
-				//if (rCurrentProcessInfo[STEP] == 2)
-				//{
-				//	std::cout << "para" << std::endl;
-				//}
-
-
-
 				double l_char = this->Get_l_char(cont);
-
-				// In case we have remeshed
-				double* thresholds = this->GetThresholds();
-				//if ()
-				//KRATOS_WATCH(*thresholds)
-
-				//if (rCurrentProcessInfo[STEP] == 2)
-				//{
-				//	std::cout << "para" << std::endl;
-				//}
 
 
 				this->IntegrateStressDamageMechanics(IntegratedStressVector, damagee, AverageStrain, AverageStress, cont, l_char);
@@ -469,8 +406,8 @@ namespace Kratos
 					rRightHandSideVector[index + j] += IntegrationWeight * N[i] * VolumeForce[j];
 				}
 			}
+
 			//compute and add internal forces (RHS = rRightHandSideVector = Fext - Fint)
-			
 			noalias(rRightHandSideVector) -= IntegrationWeight * prod(trans(B), (1 - damage_element)*StressVector);
 
 		}
@@ -847,8 +784,6 @@ namespace Kratos
 		CurrentElement->Set_l_char(l_char, cont);  // Storages the l_char of this side
 		CurrentElement->IterationPlus();
 	}
-
-
 
 
 	void AleCornVelElement::Get2MaxValues(Vector& MaxValues, double a, double b, double c)

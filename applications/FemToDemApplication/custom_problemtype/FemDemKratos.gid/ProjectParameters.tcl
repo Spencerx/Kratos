@@ -18,6 +18,7 @@ proc WriteProjectParameters { basename dir problemtypedir TableDict} {
     puts $FileVar "        \"mesh_optimality_criteria\":       \"[GiD_AccessValue get gendata Mesh_Optimality_Criteria]\","
     puts $FileVar "        \"permissible_error\":               [GiD_AccessValue get gendata Permissible_Error],"
     puts $FileVar "        \"refinement_frequency\":            [GiD_AccessValue get gendata Refinement_Frequency],"
+	puts $FileVar "        \"Mapping_Procedure\":              \"[GiD_AccessValue get gendata Mapping_Procedure]\","
     puts $FileVar "        \"gid_path\":                       \"[GiD_AccessValue get gendata gid_path]\""
     puts $FileVar "    \},"
     ## problem_data

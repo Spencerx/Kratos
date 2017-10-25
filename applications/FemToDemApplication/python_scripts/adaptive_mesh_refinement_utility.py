@@ -102,14 +102,15 @@ class AdaptiveMeshRefinementUtility:
         plane_state = self.ProjectParameters["AMR_data"]["plane_state"].GetString()
         mesh_optimality_criteria = self.ProjectParameters["AMR_data"]["mesh_optimality_criteria"].GetString()
         permissible_error = self.ProjectParameters["AMR_data"]["permissible_error"].GetDouble()
+        Mapping_Procedure = self.ProjectParameters["AMR_data"]["Mapping_Procedure"].GetString()
         #self.main_model_part = model_part
         ## Finalize previous post results -----------------------------------------------------------------------------------
         #print("dentro de execute1", os.getcwd())
         #i = 69
         #print(str("mv "+str(self.problem_path)+"/"+str(problem_name)+"_"+str(i)+".post.msh "))
         #Wait()
-        gid_output_util.finalize_results()
-        
+        #gid_output_util.finalize_results()
+        """
         if(output_mode=="GiD_PostBinary"):
             if(output_multiple_files=="MultipleFiles"):
                 for i in range(self.last_refinement_id, current_id + 1):
@@ -147,7 +148,7 @@ class AdaptiveMeshRefinementUtility:
 
                 shutil.move(src_mesh, dst_mesh)
                 shutil.move(src_res , dst_res)
-
+            """
         #print("antes de copy  ")   #cornejo
         #Wait()        
         #os.system("copy "+str(self.problem_path)+"/"+str(problem_name)+".mdpa "+str(self.AMR_files_path)+"/"+str(problem_name)+"_mesh_"+str(self.n_refinements)+".mdpa")
@@ -214,8 +215,8 @@ class AdaptiveMeshRefinementUtility:
             
             # Execute .bch file with GiD 
             os.system("cd " + str(self.gid_path[:-8]) + " && gid -b " + os.path.join(self.problem_path, str(problem_name) + ".bch -n"))
-            print("despues de gid commands gid path: ", self.gid_path[:-8])
-            Wait()            
+            #print("despues de gid commands gid path: ", self.gid_path[:-8])
+            #Wait()            
             #shutil.move(os.path.join(str(self.problem_path), str(problem_name) + ".dat" ) , os.path.join(str(self.problem_path), str(problem_name) + ".mdpa"))
             #shutil.rmtree(os.path.join(str(self.problem_path), str(problem_name)+"-1.dat"))
             
@@ -235,12 +236,16 @@ class AdaptiveMeshRefinementUtility:
             # Definition of model part
             #model_part = ModelPart("SolidDomain")
             delta_time = self.ProjectParameters["problem_data"]["time_step" ].GetDouble()
+            step = model_part_old.ProcessInfo[STEP]
+
             #current_time += delta_time
 
             model_part = ModelPart(self.ProjectParameters["problem_data"]["model_part_name"].GetString())
             model_part.ProcessInfo.SetValue(DOMAIN_SIZE, self.ProjectParameters["problem_data"]["domain_size"].GetInt())
             model_part.ProcessInfo.SetValue(DELTA_TIME,  delta_time)
             model_part.ProcessInfo.SetValue(TIME, current_time)  # curent or current+delta_t ??
+            model_part.ProcessInfo.SetValue(STEP, step)
+
 
             #print("time", model_part.ProcessInfo[TIME])
             #Wait()
@@ -306,10 +311,24 @@ class AdaptiveMeshRefinementUtility:
 #------------------------------------------------------------------->> Aqui estamos
             ## Mapping of variables -----------------------------------------------------------------------------------------
             
-            MappingVariablesProcess(model_part_old, model_part, "Constant").Execute()
+            MappingVariablesProcess(model_part_old, model_part, "Constant", Mapping_Procedure).Execute()
 
             ## Erase old Model Part -----------------------------------------------------------------------------------------
-            
+
+
+
+            #print("step 3", step)
+            for elem in model_part_old.Elements:
+                damage = elem.GetValuesOnIntegrationPoints(DAMAGE_ELEMENT, model_part.ProcessInfo)
+                if damage[0][0] > 0.0:
+                   print("Id elemento dañado: ", elem.Id)
+                   Wait()
+
+
+
+
+
+
             model_part_old = None
             
             ## Test new Mesh ------------------------------------------------------------------------------------------------
@@ -361,7 +380,7 @@ class AdaptiveMeshRefinementUtility:
         permissible_error = self.ProjectParameters["AMR_data"]["permissible_error"].GetDouble()
 
         ## Finalize previous post results -----------------------------------------------------------------------------------
-        
+        """
         if(output_mode == "GiD_PostBinary"):
             if(output_multiple_files=="MultipleFiles"):
                 for i in range(self.last_refinement_id, current_id + 1):
@@ -401,7 +420,7 @@ class AdaptiveMeshRefinementUtility:
         src = os.path.join(str(self.problem_path), str(problem_name) + ".mdpa")
         dst = os.path.join(str(self.AMR_files_path), str(problem_name) + "_mesh_" + str(self.n_refinements) + ".mdpa")
         shutil.copy(src, dst)
-        
+        """
         ## Compute and save info of last mesh -------------------------------------------------------------------------------
         
         AdaptiveMeshRefinementProcess(model_part, 

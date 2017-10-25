@@ -1,12 +1,12 @@
-BeginZE F:\Kratos\applications\FemToDemApplication\examples\pruebasDynMapeo.gid\pruebasDynMapeo.vv
-   x -10.013023376464844 3.7906520366668701
-   y 6.4144077301025391 -4.606564998626709
-   z -4.1800971031188965 4.1800971031188965
-   e 4.1800971031188965
+BeginZE D:/FemDem/applications/FemToDemApplication/examples/pruebasDynMapeo.gid/pruebasDynMapeo.vv
+   x -7.50197744369506836 3.40293312072753906
+   y 4.0577855110168457 -2.9433290958404541
+   z -12.5402908325195313 12.5402908325195313
+   e 4.18009710311889648
    v 0 0 0
    r 1
    m 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1
-   c -2.2629799842834473 1.3487590551376343 0
+   c -2.26693606376647949 1.34875774383544922 0
    pd 0
    pno 0
    pfo 0
@@ -14,7 +14,7 @@ BeginZE F:\Kratos\applications\FemToDemApplication\examples\pruebasDynMapeo.gid\
    pv 0
    NowUse 1
    DrawingType 0
-   LightVector -9.375 -11.456500053405762 149.4739990234375 0
+   LightVector -9.375 -11.4565000534057617 149.4739990234375 0
    OGLShadow(UseShadows) 0
    OGLShadow(RenderMode) RenderNice
    OGLShadow(ShadowBias) -0.002
@@ -29,7 +29,7 @@ BeginZE F:\Kratos\applications\FemToDemApplication\examples\pruebasDynMapeo.gid\
    OGLStereo(EyeDistance) 0.075
    OGLStereo(LeftEyeDistance) 1 0 0 1
    OGLStereo(RightEyeDistance) 0 1 1 1
-EndZE F:\Kratos\applications\FemToDemApplication\examples\pruebasDynMapeo.gid\pruebasDynMapeo.vv
+EndZE D:/FemDem/applications/FemToDemApplication/examples/pruebasDynMapeo.gid/pruebasDynMapeo.vv
 
 BeginMirror
    Mirror 0 Angle 0.0 AngleFake -15.0 SizeFactor 2.0 HeightOffset 0.25 Color #d9e5f24d Backlight Off EdgeStyle No Type Scene DrawMode Mirror

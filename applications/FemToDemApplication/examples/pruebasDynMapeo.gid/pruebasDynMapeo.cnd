@@ -5,7 +5,7 @@ GROUPALLOW: surfaces
 QUESTION: Yield_Surface#CB#(ModifiedMohrCoulomb,SimoJu,Rankine,DruckerPrager)
 VALUE: ModifiedMohrCoulomb
 QUESTION: Young_Modulus
-VALUE: 3.0e7
+VALUE: 35.00e9
 HELP: Units in IS: N/m2
 QUESTION: Density
 VALUE: 2400

@@ -671,7 +671,7 @@ protected:
         std::fstream AMR_info;
         AMR_info.open("AMR_info.txt", std::fstream::out | std::fstream::app);
     
-        if(mnumber_of_refinements==0)
+        if(mnumber_of_refinements == 0)
             AMR_info << "################ Adaptive Mesh Refinement Info ################" << std::endl;
             
         AMR_info << "Mesh: " << mnumber_of_refinements << std::endl;
