@@ -148,9 +148,15 @@ namespace Kratos
 
 		// computation of the equivalent damage threshold and damage of the element for AMR mapping
 		double *thresholds = this->GetThresholds();
+		
+		//KRATOS_WATCH(thresholds[0])
+
 		Vector TwoMaxValues;
 		this->Get2MaxValues(TwoMaxValues, thresholds[0], thresholds[1], thresholds[2]);
-		double EqThreshold = 0.5*(TwoMaxValues[0] + TwoMaxValues[1]);
+		double EqThreshold = 0.5*(TwoMaxValues[0] + TwoMaxValues[1]);  // El menor o mayor?? TODO
+
+		//KRATOS_WATCH(EqThreshold)
+
 		this->SetValue(STRESS_THRESHOLD, EqThreshold); // AMR
 		this->Set_threshold(EqThreshold);
 		this->SetValue(DAMAGE_ELEMENT, damage_element);
@@ -566,7 +572,7 @@ namespace Kratos
 	void AleCornVelElement::GetValueOnIntegrationPoints(const Variable<double>& rVariable, std::vector<double>& rValues,
 		const ProcessInfo& rCurrentProcessInfo)
 	{
-		if (rVariable == DAMAGE_ELEMENT || rVariable == IS_DAMAGED)
+		if (rVariable == DAMAGE_ELEMENT || rVariable == IS_DAMAGED || rVariable == STRESS_THRESHOLD)
 		{
 			CalculateOnIntegrationPoints(rVariable, rValues, rCurrentProcessInfo);
 		}
@@ -648,6 +654,14 @@ namespace Kratos
 			rOutput.resize(1);
 			for (unsigned int PointNumber = 0; PointNumber < 1; PointNumber++) {
 				rOutput[PointNumber] = double(this->GetValue(IS_DAMAGED));
+			}
+		}
+
+		if (rVariable == STRESS_THRESHOLD)
+		{
+			rOutput.resize(1);
+			for (unsigned int PointNumber = 0; PointNumber < 1; PointNumber++) {
+				rOutput[PointNumber] = double(this->GetValue(STRESS_THRESHOLD));
 			}
 		}
 	}

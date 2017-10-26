@@ -254,34 +254,35 @@ class AdaptiveMeshRefinementUtility:
 
 
             # we delete 2 added parameters to avoid error --> TODO
-            #self.ProjectParameters["solver_settings"].RemoveValue("damp_factor_m")
-            #self.ProjectParameters["solver_settings"].RemoveValue("dynamic_factor")
+            self.ProjectParameters["solver_settings"].RemoveValue("damp_factor_m")
+            self.ProjectParameters["solver_settings"].RemoveValue("dynamic_factor")
 
 
             #construct the solver (main setting methods are located in the solver_module)
-            #solver_module = __import__(self.ProjectParameters["solver_settings"]["solver_type"].GetString())
-            #main_step_solver   = solver_module.CreateSolver(model_part, self.ProjectParameters["solver_settings"])
+            solver_module = __import__(self.ProjectParameters["solver_settings"]["solver_type"].GetString())
+            main_step_solver   = solver_module.CreateSolver(model_part, self.ProjectParameters["solver_settings"])
 
 
             #print("delta time:" , model_part.ProcessInfo[DELTA_TIME])
             #Wait()
+
             # Add variables (always before importing the model part)
-            #main_step_solver.AddVariables()
+            main_step_solver.AddVariables()
 
             # Read model_part (note: the buffer_size is set here) (restart is read here)
-            #main_step_solver.ImportModelPart()
+            main_step_solver.ImportModelPart()
 
             # Add dofs (always after importing the model part)
-            #if((model_part.ProcessInfo).Has(IS_RESTARTED)):
-                #if(model_part.ProcessInfo[IS_RESTARTED] == False):
-                    #main_step_solver.AddDofs()
-            #else:
-                #main_step_solver.AddDofs()
+            if((model_part.ProcessInfo).Has(IS_RESTARTED)):
+                if(model_part.ProcessInfo[IS_RESTARTED] == False):
+                    main_step_solver.AddDofs()
+            else:
+                main_step_solver.AddDofs()
 
             # Add materials (assign material to model_parts if Materials.json exists)
             #self.AddMaterials(model_part)
 
-            # Add processes
+            # Add processes -> en main
             #self.model_processes = self.AddProcesses(model_part)
             #self.model_processes.ExecuteInitialize()
 
@@ -317,15 +318,24 @@ class AdaptiveMeshRefinementUtility:
 
 
 
-            #print("step 3", step)
+            """print("*** Old MDPA ***")
             for elem in model_part_old.Elements:
-                damage = elem.GetValuesOnIntegrationPoints(DAMAGE_ELEMENT, model_part.ProcessInfo)
+                damage = elem.GetValuesOnIntegrationPoints(DAMAGE_ELEMENT, model_part_old.ProcessInfo)
                 if damage[0][0] > 0.0:
                    print("Id elemento dañado: ", elem.Id)
                    Wait()
+            print("************")
 
+            print("*** New MDPA ***")
+            for elem in model_part.Elements:
+                damage = elem.GetValuesOnIntegrationPoints(DAMAGE_ELEMENT, model_part.ProcessInfo)
+                if damage[0][0] > 0.0:
+                   print("Id elemento dañado: ", elem.Id)
+            print("************")
 
+            Wait()
 
+            """
 
 
 
@@ -362,7 +372,7 @@ class AdaptiveMeshRefinementUtility:
         self.last_refinement_id = current_id + 1
         self.n_refinements = self.n_refinements + 1
         
-        return model_part #main_step_solver, gid_output_util
+        return model_part, main_step_solver #, gid_output_util
 
 
 

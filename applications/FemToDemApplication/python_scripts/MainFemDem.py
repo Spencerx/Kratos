@@ -367,24 +367,25 @@ class FEM_Solution(MainSolidFEM.Solution):
 		if(self.activate_AMR):
 			self.refine, self.last_mesh = self.AMR_util.CheckAMR(self.time)
 			if(self.refine):
-				self.main_model_part = self.AMR_util.Execute(self.main_model_part,
+				self.main_model_part, self.solver = self.AMR_util.Execute(self.main_model_part,
 					                                         self.solver,
 					                                         self.gid_output_util,
 					                                         self.time,
 					                                         self.current_id)
 
 				#construct the new solver (main setting methods are located in the solver_module)
-				self.ProjectParameters["solver_settings"].RemoveValue("damp_factor_m")
-				self.ProjectParameters["solver_settings"].RemoveValue("dynamic_factor")
+				#self.ProjectParameters["solver_settings"].RemoveValue("damp_factor_m")
+				#self.ProjectParameters["solver_settings"].RemoveValue("dynamic_factor")
 
-				solver_module = __import__(self.ProjectParameters["solver_settings"]["solver_type"].GetString())
-				self.solver   = solver_module.CreateSolver(self.main_model_part, self.ProjectParameters["solver_settings"])
+				#solver_module = __import__(self.ProjectParameters["solver_settings"]["solver_type"].GetString())
+				#self.solver   = solver_module.CreateSolver(self.main_model_part, self.ProjectParameters["solver_settings"])
 				self.InitializeAfterAMR()
 
 				# test
+				"""
 				print("antes de imprimir")
 				Wait()
-				self.GraphicalOutputPrintOutput()	
+				self.GraphicalOutputPrintOutput()	"""
 
 
 			
@@ -487,7 +488,7 @@ class FEM_Solution(MainSolidFEM.Solution):
 	def InitializeAfterAMR(self):
 
 		#### INITIALIZE ####
-		
+		"""
 		# Add variables (always before importing the model part)
 		self.solver.AddVariables()
 		print("en main antes de import:", self.main_model_part.ProcessInfo[KratosMultiphysics.STEP])
@@ -502,7 +503,7 @@ class FEM_Solution(MainSolidFEM.Solution):
 		else:
 			self.solver.AddDofs()
 
-
+		"""
 		# Add materials (assign material to model_parts if Materials.json exists)
 		#self.AddMaterials()
 		

@@ -222,6 +222,7 @@ proc WriteProjectParameters { basename dir problemtypedir TableDict} {
     AppendOutputVariables PutStrings iGroup Write_Integrated_Stress STRESS_VECTOR_INTEGRATED
     AppendOutputVariables PutStrings iGroup Write_Damage DAMAGE_ELEMENT
     AppendOutputVariables PutStrings iGroup Write_Is_Damaged IS_DAMAGED
+    AppendOutputVariables PutStrings iGroup Stress_Threshold STRESS_THRESHOLD
 
     if {$iGroup > 0} {
         set PutStrings [string trimright $PutStrings ,]

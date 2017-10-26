@@ -138,6 +138,7 @@ protected:
     
     std::string mImposedDisplacement;
 	std::string mMappingProcedure;
+	double mAverageElementLength;
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -182,7 +183,9 @@ protected:
         {
             AverageElementLength += (*it)->GetGeometry().Length();
         }
-        AverageElementLength = AverageElementLength / mmodel_part_old.NumberOfElements();
+        AverageElementLength  = AverageElementLength / mmodel_part_old.NumberOfElements();
+		mAverageElementLength = AverageElementLength;
+
     
         int NRows = int((Y_max - Y_min) / AverageElementLength);
         int NColumns = int((X_max - X_min) / AverageElementLength);
@@ -354,7 +357,7 @@ protected:
     Vector TriangleShapeFunctions(const double& rx_local, const double& ry_local)
     {
         Vector TSF = ZeroVector(3);
-        TSF[0] = 1 - rx_local - ry_local;
+		TSF[0] = 1 - rx_local - ry_local;
         TSF[1] = rx_local;
         TSF[2] = ry_local;
         return TSF;    
@@ -365,10 +368,10 @@ protected:
     Vector QuadrilateralShapeFunctions(const double& rx_local, const double& ry_local)
     {
         Vector QSF = ZeroVector(4);
-        QSF[0] = (1-rx_local-ry_local+rx_local*ry_local)/4;
-        QSF[1] = (1+rx_local-ry_local-rx_local*ry_local)/4;
-        QSF[2] = (1+rx_local+ry_local+rx_local*ry_local)/4;
-        QSF[3] = (1-rx_local+ry_local-rx_local*ry_local)/4;
+		QSF[0] = (1 - rx_local - ry_local + rx_local*ry_local) / 4;
+		QSF[1] = (1 + rx_local - ry_local - rx_local*ry_local) / 4;
+		QSF[2] = (1 + rx_local + ry_local + rx_local*ry_local) / 4;
+		QSF[3] = (1 - rx_local + ry_local - rx_local*ry_local) / 4;
         return QSF;    
     }
 
@@ -384,15 +387,21 @@ protected:
         Element::GeometryType::CoordinatesArrayType GPGlobalCoord;
         std::vector<GaussPointNew*> GaussPointNewVector;
 
-        int NRows = int((Y_max - Y_min) / (rCharacteristicLength * 2));
-        int NColumns = int((X_max - X_min) / (rCharacteristicLength * 2));
+        //int NRows = int((Y_max - Y_min) / (rCharacteristicLength * 2));
+        //int NColumns = int((X_max - X_min) / (rCharacteristicLength * 2));
     
-        double RowSize = (Y_max - Y_min) / NRows;
-        double ColumnSize = (X_max - X_min) / NColumns;
+        //double RowSize = (Y_max - Y_min) / NRows;
+        //double ColumnSize = (X_max - X_min) / NColumns;
+
+		int NRows    = int((Y_max - Y_min) / (2 * mAverageElementLength));
+		int NColumns = int((X_max - X_min) / (2 * mAverageElementLength));
+
+		double RowSize = (Y_max - Y_min) / NRows;
+		double ColumnSize = (X_max - X_min) / NColumns;
 
         GaussPointOldCell** pGaussPointOldMatrix;
-        pGaussPointOldMatrix = new GaussPointOldCell*[NRows];
-        for(int i=0;i<NRows;i++)  pGaussPointOldMatrix[i] = new GaussPointOldCell[NColumns];
+		pGaussPointOldMatrix = new GaussPointOldCell*[NRows];
+		for (int i = 0;i < NRows;i++)  pGaussPointOldMatrix[i] = new GaussPointOldCell[NColumns];
         
         
         // GP local coordinates
@@ -403,10 +412,21 @@ protected:
         // Locate old elements in cells
         for(ElementsArrayType::ptr_iterator it = mmodel_part_old.Elements().ptr_begin(); it != mmodel_part_old.Elements().ptr_end(); ++it)
         {
-            (*it)->GetGeometry().GlobalCoordinates(GPGlobalCoord,GPLocalCoord);
+            //(*it)->GetGeometry().GlobalCoordinates(GPGlobalCoord,GPLocalCoord);
 
+			Vector GPGlobalCoord;
+			CalculateGlobalBaricenterCoordinates((*it), GPGlobalCoord);
             X_me = GPGlobalCoord[0];
             Y_me = GPGlobalCoord[1];
+
+     //       if ((*it)->Id() == 126)
+     //       {
+     //           KRATOS_WATCH(X_me)
+     //           KRATOS_WATCH(Y_me)
+					//KRATOS_WATCH(GPGlobalCoord[0])
+					//KRATOS_WATCH(GPGlobalCoord[1])
+     //           KRATOS_WATCH(Y_me)
+     //       }
 
             Row    = int((Y_max - Y_me) / RowSize);
             Column = int((X_me - X_min) / ColumnSize);
@@ -415,7 +435,31 @@ protected:
             if(Column == NColumns) Column = NColumns - 1;
 
             pGaussPointOldMatrix[Row][Column].GaussPointOldVector.push_back(GaussPointOld(*it, X_me, Y_me));
+
+			//if ((*it)->Id() == 126)
+			//{
+			//	KRATOS_WATCH((*it)->GetValue(DAMAGE_ELEMENT))
+			//	
+			//	KRATOS_WATCH(Row)
+			//	KRATOS_WATCH(Column)
+			//	KRATOS_WATCH(mAverageElementLength)
+			//	KRATOS_WATCH(NRows)
+			//	KRATOS_WATCH(NColumns)
+
+
+			//	//KRATOS_WATCH((*it)->GetValue(DAMAGE_ELEMENT))
+			//}
+
+
         }
+
+
+		//KRATOS_WATCH(pGaussPointOldMatrix[0][0].GaussPointOldVector.size())
+		//for (int i = 0; i < pGaussPointOldMatrix[0][0].GaussPointOldVector.size(); i++)
+		//{
+		//	KRATOS_WATCH(pGaussPointOldMatrix[0][0].GaussPointOldVector[0].pElement->Id())
+		//}
+		
 
         // Locate New elements in cells
         for(ElementsArrayType::ptr_iterator it = mmodel_part_new.Elements().ptr_begin(); it != mmodel_part_new.Elements().ptr_end(); ++it)
@@ -431,8 +475,32 @@ protected:
             if(Row == NRows) Row = NRows - 1;
             if(Column == NColumns) Column = NColumns - 1;
             GaussPointNewVector.push_back(new GaussPointNew(*it, X_me, Y_me, Row, Column));
+
+			//KRATOS_WATCH((*it)->Id())
+			//if ((*it)->Id() == 7)
+			//{
+			//	KRATOS_WATCH(Row)
+			//	KRATOS_WATCH(Column)
+			//	//KRATOS_WATCH(Column)
+			//	//KRATOS_WATCH(Column)
+			//}
+
+
         }  
-    
+		
+		// testsss
+		//KRATOS_WATCH(GaussPointNewVector.size())
+		//for (int i = 0; i < GaussPointNewVector.size();i++)
+		//{
+		//	if (GaussPointNewVector[i]->Row == 0 && GaussPointNewVector[i]->Column == 0)
+		//	{
+		//		Element::Pointer elem = GaussPointNewVector[i]->pElement;
+		//		KRATOS_WATCH(elem->Id())
+		//	}
+		//}
+
+
+
         if (mMappingProcedure == "Non_Local_Average")
         {
             //Transfer state variables from old Gauss points to new Gauss Points (nonlocal average)
@@ -523,16 +591,26 @@ protected:
             }
 
         }
+
         else // Closest_Point_Transfer
         {
             // Loop over new elements
             for(unsigned int i = 0; i < GaussPointNewVector.size(); i++)
             {
-                Me   = GaussPointNewVector[i]->pElement;
-                X_me = GaussPointNewVector[i]->X_coord;
-                Y_me = GaussPointNewVector[i]->Y_coord;
-                Row  = GaussPointNewVector[i]->Row;
+                Me     = GaussPointNewVector[i]->pElement;
+                X_me   = GaussPointNewVector[i]->X_coord;
+                Y_me   = GaussPointNewVector[i]->Y_coord;
+                Row    = GaussPointNewVector[i]->Row;
                 Column = GaussPointNewVector[i]->Column;
+
+				//KRATOS_WATCH(Me->Id())
+				/*if (Me->Id() == 7)
+				{
+					KRATOS_WATCH(Row)
+					KRATOS_WATCH(Column)
+					KRATOS_WATCH(Column)
+				}*/
+
 
                 double* Distance  = new double[pGaussPointOldMatrix[Row][Column].GaussPointOldVector.size()];
                 double* Damage    = new double[pGaussPointOldMatrix[Row][Column].GaussPointOldVector.size()];
@@ -549,21 +627,58 @@ protected:
                     Distance[j]  = sqrt((X_other - X_me) * (X_other - X_me) + (Y_other - Y_me) * (Y_other - Y_me));
                     Damage[j]    = Other->GetValue(DAMAGE_ELEMENT);
                     Threshold[j] = Other->GetValue(STRESS_THRESHOLD);
+
+					//if (Other->Id() == 126)
+					//{
+					//	KRATOS_WATCH(Damage[j])
+					//	KRATOS_WATCH(Damage[j])
+					//}
+                    // if (Me->Id() == 7)
+                    // {
+                    //     std::cout<<"***************"<<std::endl;
+                    //     KRATOS_WATCH(X_me)
+                    //     KRATOS_WATCH(Y_me)
+                    //     KRATOS_WATCH(X_other)
+                    //     KRATOS_WATCH(Y_other)
+                    //     KRATOS_WATCH(Other->Id())
+                    //     //KRATOS_WATCH(GaussPointNewVector.size())
+                    //      KRATOS_WATCH(Distance[j])
+                    //    KRATOS_WATCH(Damage[j])
+                    //    KRATOS_WATCH(Threshold[j])
+                    //    std::cout<<"***************"<<std::endl;
+                    // }
+
+
                 }
 
+
+				 //if (Me->Id() == 7)
+				 //{
+				 //	KRATOS_WATCH(pGaussPointOldMatrix[0][0].GaussPointOldVector.size())
+     //                KRATOS_WATCH(GaussPointNewVector.size())
+				 //	KRATOS_WATCH(Distance[0])
+				 //	KRATOS_WATCH(Distance[1])
+				 //	KRATOS_WATCH(Distance[2])
+				 //	KRATOS_WATCH(*Damage)
+				 //	KRATOS_WATCH(*Threshold)
+				 //}
+				double MinDistance = Distance[0];
                 damage    = Damage[0];
                 threshold = Threshold[0];
+				//KRATOS_WATCH(damage)
 
                 // Select the closest point old element
                 for (int elem = 1; elem < pGaussPointOldMatrix[Row][Column].GaussPointOldVector.size(); elem++)
                 {
-                    if (Distance[elem] < Distance[elem - 1])
+                    if (Distance[elem] < MinDistance)
                     {
+						MinDistance = Distance[elem];
                         damage    = Damage[elem];
                         threshold = Threshold[elem];
                     }
                 }
 
+				//KRATOS_WATCH(damage)
                 Me->SetValue(DAMAGE_ELEMENT, damage);
                 Me->SetValue(STRESS_THRESHOLD, threshold);
 
@@ -634,6 +749,26 @@ protected:
         
         //To compute linearly incremented loads
         //mmodel_part_new.GetProcessInfo()[TIME_STEPS] = mmodel_part_old.GetProcessInfo()[TIME_STEPS];
+    }
+
+
+
+    void CalculateGlobalBaricenterCoordinates(Element::Pointer pElement, Vector& rCoordinates)
+    {
+        rCoordinates = ZeroVector(2);
+
+        Geometry< Node < 3 > >& NodesElem = pElement->GetGeometry();
+        Vector X = ZeroVector(3);  // x coord of the nodes
+        Vector Y = ZeroVector(3);  // y coord of the nodes
+
+        for (int node = 0; node < 3; node++)
+        {
+            X[node] = NodesElem[node].X();
+            Y[node] = NodesElem[node].Y();
+        }
+
+        rCoordinates[0] = 0.33333*(X[0] + X[1] + X[2]);
+        rCoordinates[1] = 0.33333*(Y[0] + Y[1] + Y[2]);
     }
 
 }; //Class
