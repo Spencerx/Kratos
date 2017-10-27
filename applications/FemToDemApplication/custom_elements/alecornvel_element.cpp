@@ -96,12 +96,12 @@ namespace Kratos
 			this->Set_threshold(ElementThreshold, 1);
 			this->Set_threshold(ElementThreshold, 2);
 
-			// if (rCurrentProcessInfo[STEP] > 1)
-			// {
-			// 	KRATOS_WATCH(ElementThreshold)
-			// 	KRATOS_WATCH(*this->GetThresholds())
-			// 	std::cout << " " << std::endl;
-			// }
+			 //if (rCurrentProcessInfo[STEP] > 2 && this->Id() == 1)
+			 //{
+			 //	KRATOS_WATCH(ElementThreshold)
+			 //	KRATOS_WATCH(*this->GetThresholds())
+			 //	std::cout << " " << std::endl;
+			 //}
 		}
 
 		// IDEM with the edge damages

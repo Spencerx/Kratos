@@ -1,7 +1,7 @@
 //
 //   Project Name:        KratosDamageApplication   & FEMDEM             $
 //   Last modified by:    $Author: Ignasi de Pouplana Sardà & A. Cornejo $
-//   Date:                $Date:                  July 2014              $
+//   Date:                $Date:                  october 2017           $
 //   Revision:            $Revision:                    0.0              $
 //
 
@@ -348,7 +348,7 @@ protected:
         for(unsigned int i = 0; i < NodeNewVector.size(); i++)
             delete NodeNewVector[i];
     
-        std::cout << "-- Nodal Displacements Mapped --" << std::endl;
+        std::cout << "-- Nodal Values Mapped --" << std::endl;
     
     } //NodalVariablesMapping_End
 
@@ -464,8 +464,13 @@ protected:
         // Locate New elements in cells
         for(ElementsArrayType::ptr_iterator it = mmodel_part_new.Elements().ptr_begin(); it != mmodel_part_new.Elements().ptr_end(); ++it)
         {
-            (*it)->GetGeometry().GlobalCoordinates(GPGlobalCoord,GPLocalCoord);
+            // (*it)->GetGeometry().GlobalCoordinates(GPGlobalCoord,GPLocalCoord);
             
+            // X_me = GPGlobalCoord[0];
+            // Y_me = GPGlobalCoord[1];
+
+            Vector GPGlobalCoord;
+            CalculateGlobalBaricenterCoordinates((*it), GPGlobalCoord);
             X_me = GPGlobalCoord[0];
             Y_me = GPGlobalCoord[1];
 
@@ -498,8 +503,6 @@ protected:
 		//		KRATOS_WATCH(elem->Id())
 		//	}
 		//}
-
-
 
         if (mMappingProcedure == "Non_Local_Average")
         {
@@ -592,6 +595,7 @@ protected:
 
         }
 
+
         else // Closest_Point_Transfer
         {
             // Loop over new elements
@@ -615,7 +619,7 @@ protected:
                 double* Distance  = new double[pGaussPointOldMatrix[Row][Column].GaussPointOldVector.size()];
                 double* Damage    = new double[pGaussPointOldMatrix[Row][Column].GaussPointOldVector.size()];
                 double* Threshold = new double[pGaussPointOldMatrix[Row][Column].GaussPointOldVector.size()];
-                double damage, threshold;
+                double damage, threshold, MinDistance;
                 
                 // Loop over old elements inside the cell
                 for (unsigned int j = 0; j < pGaussPointOldMatrix[Row][Column].GaussPointOldVector.size(); j++)
@@ -662,9 +666,9 @@ protected:
 				 //	KRATOS_WATCH(*Damage)
 				 //	KRATOS_WATCH(*Threshold)
 				 //}
-				double MinDistance = Distance[0];
-                damage    = Damage[0];
-                threshold = Threshold[0];
+				MinDistance = Distance[0];
+                damage      = Damage[0];
+                threshold   = Threshold[0];
 				//KRATOS_WATCH(damage)
 
                 // Select the closest point old element
@@ -673,8 +677,8 @@ protected:
                     if (Distance[elem] < MinDistance)
                     {
 						MinDistance = Distance[elem];
-                        damage    = Damage[elem];
-                        threshold = Threshold[elem];
+                        damage      = Damage[elem];
+                        threshold   = Threshold[elem];
                     }
                 }
 
@@ -752,7 +756,8 @@ protected:
     }
 
 
-
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    
     void CalculateGlobalBaricenterCoordinates(Element::Pointer pElement, Vector& rCoordinates)
     {
         rCoordinates = ZeroVector(2);
