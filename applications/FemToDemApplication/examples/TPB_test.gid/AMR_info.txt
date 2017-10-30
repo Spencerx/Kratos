@@ -1,15 +1,14 @@
 ################ Adaptive Mesh Refinement Info ################
 Mesh: 0
-Number of elements: 1922
-Global Refinement Parameter: 1.13631
+Number of elements: 4086
+Global Refinement Parameter: 2.56329
+------------------------------------------------------------------
+Mesh: 1
+Number of elements: 6738
+Global Refinement Parameter: 1.45649
 ------------------------------------------------------------------
 ################ Adaptive Mesh Refinement Info ################
 Mesh: 0
-Number of elements: 1922
-Global Refinement Parameter: 1.13631
-------------------------------------------------------------------
-################ Adaptive Mesh Refinement Info ################
-Mesh: 0
-Number of elements: 1922
-Global Refinement Parameter: 1.13631
+Number of elements: 4086
+Global Refinement Parameter: 2.56329
 ------------------------------------------------------------------

@@ -1,13 +1,13 @@
 Mescape Files Read
-D:\FemDem\applications\FemToDemApplication\examples\pruebasDynMapeo.gid
+D:\FemDem\applications\FemToDemApplication\examples\TPB_test.gid
 Mescape Meshing AssignSizes BackgMesh
 Yes
 escape
 Mescape Meshing AssignSizes BackgMesh
-D:\FemDem\applications\FemToDemApplication\examples\pruebasDynMapeo.gid\pruebasDynMapeo.bgm
+D:\FemDem\applications\FemToDemApplication\examples\TPB_test.gid\TPB_test.bgm
 Mescape Meshing Generate
 Yes
-0.117698 MeshingParametersFrom=Preferences
+0.0162966 MeshingParametersFrom=Preferences
 Mescape Meshing MeshView
 Mescape Utilities Calculate
 Mescape Files WriteCalcFile

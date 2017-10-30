@@ -701,7 +701,7 @@ protected:
 		for (unsigned int i = 0;i < GaussPointNewVector.size(); i++)
 			delete GaussPointNewVector[i];
     
-        std::cout << "-- Gauss Point State Variable Mapped --" << std::endl;
+        std::cout << "-- Gauss Point State Variables Mapped --" << std::endl;
 
 
 

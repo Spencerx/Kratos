@@ -390,7 +390,7 @@ class FEM_Solution(MainSolidFEM.Solution):
 
 			
 			elif(self.last_mesh):
-				self.AMR_util.Finalize(self.main_model_part,self.current_id)
+				self.AMR_util.Finalize(self.main_model_part, self.current_id)
 
 
 

@@ -444,16 +444,16 @@ class AdaptiveMeshRefinementUtility:
         #os.system("mv "+str(self.problem_path)+"/"+str(problem_name)+"_AMR_parameters.post.msh "+str(self.AMR_files_path)+"/"+str(problem_name)+"_AMR_parameters_mesh_"+str(self.n_refinements)+".post.msh")
         #os.system("mv "+str(self.problem_path)+"/"+str(problem_name)+"_AMR_parameters.post.res "+str(self.AMR_files_path)+"/"+str(problem_name)+"_AMR_parameters_mesh_"+str(self.n_refinements)+".post.res")
 
-        srcmsh = os.path.join(str(self.problem_path), str(problem_name) + "_AMR_parameters.post.msh")
-        srcres = os.path.join(str(self.problem_path), str(problem_name) + "_AMR_parameters.post.res")
+        srcmsh = os.path.join(str(self.problem_path),  str(problem_name) + "_AMR_parameters.post.msh")
+        srcres = os.path.join(str(self.problem_path),  str(problem_name) + "_AMR_parameters.post.res")
         dstmsh = os.path.join(str(self.AMR_files_path), str(problem_name) + "_AMR_parameters_mesh_" + str(self.n_refinements) + ".post.msh")
         dstres = os.path.join(str(self.AMR_files_path), str(problem_name) + "_AMR_parameters_mesh_" + str(self.n_refinements) + ".post.res")
         shutil.move(srcmsh, dstmsh)
         shutil.move(srcres, dstres)
 
         #os.system("mv "+str(self.problem_path)+"/AMR_info.txt "+str(self.AMR_files_path))
-        src = os.path.join(str(self.problem_path), AMR_info.txt)
-        dst = os.path.join(str(self.AMR_files_path), AMR_info.txt)
+        src = os.path.join(str(self.problem_path),   "AMR_info.txt")
+        dst = os.path.join(str(self.AMR_files_path), "AMR_info.txt")
         shutil.move(src, dst)
 
 

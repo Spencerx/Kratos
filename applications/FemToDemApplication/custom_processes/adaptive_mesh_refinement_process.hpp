@@ -344,7 +344,7 @@ protected:
             young   = (*it)->GetProperties()[YOUNG_MODULUS];
             poisson = (*it)->GetProperties()[POISSON_RATIO];
       
-            if(mplane_state=="Plane_Stress")
+            if(mplane_state == "Plane_Stress")
             {
                 aux1 = young/(1-poisson*poisson);
                 aux2 = poisson*aux1;
@@ -481,7 +481,7 @@ protected:
                 pElementRefinementParameter[Elem_it] = pow(GlobalError/(mpermissible_error*GlobalStrainEnergy),1/m_coef)*
                                               pow(sqrt(mNElements)*ElementError[Elem_it]/GlobalError,1/q_coef);
                                               
-                pNewElementDimension[Elem_it] = ElementDimension[Elem_it]/pElementRefinementParameter[Elem_it];
+                pNewElementDimension[Elem_it] = ElementDimension[Elem_it] / pElementRefinementParameter[Elem_it];
                 Elem_it += 1;
             }
         }
@@ -492,7 +492,7 @@ protected:
                 pElementRefinementParameter[Elem_it] = pow(ElementError[Elem_it]/(mpermissible_error*GlobalStrainEnergy)*
                                                   sqrt(TotalArea/((*it)->GetGeometry().Area())),1/m_coef);
         
-                pNewElementDimension[Elem_it] = ElementDimension[Elem_it]/pElementRefinementParameter[Elem_it];
+                pNewElementDimension[Elem_it] = ElementDimension[Elem_it] / pElementRefinementParameter[Elem_it];
                 Elem_it += 1;
             }
         }
@@ -554,7 +554,7 @@ protected:
             bgmfile << i + 1 << " " << NewElementDimension[i] << std::endl;
             GlobalDimension += NewElementDimension[i];
         }
-        GlobalDimension = GlobalDimension/mNElements;
+        GlobalDimension = GlobalDimension / mNElements;
         bgmfile << "End DesiredSize" << std::endl;
   
         bgmfile.close();
