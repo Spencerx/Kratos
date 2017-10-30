@@ -29,7 +29,7 @@ VALUE: Global_Error_Equidistribution
 QUESTION: Permissible_Error
 VALUE: 0.09
 QUESTION: Refinement_Frequency
-VALUE: 1.0
+VALUE: 1.5
 HELP: In seconds
 QUESTION: Mapping_Procedure#CB#(Closest_Point_Transfer,Non_Local_Average)
 VALUE: Closest_Point_Transfer

@@ -362,7 +362,7 @@ class FEM_Solution(MainSolidFEM.Solution):
 		self.model_processes.ExecuteAfterOutputStep()
 
 		# Eliminates elements from the mesh with damage > 0.98
-		self.main_model_part.RemoveElementsFromAllLevels(KratosMultiphysics.TO_ERASE)
+		#self.main_model_part.RemoveElementsFromAllLevels(KratosMultiphysics.TO_ERASE)
 
 		if(self.activate_AMR):
 			self.refine, self.last_mesh = self.AMR_util.CheckAMR(self.time)
@@ -382,10 +382,10 @@ class FEM_Solution(MainSolidFEM.Solution):
 				self.InitializeAfterAMR()
 
 				# test
-				"""
+				
 				print("antes de imprimir")
 				Wait()
-				self.GraphicalOutputPrintOutput()	"""
+				self.GraphicalOutputPrintOutput()	
 
 
 			

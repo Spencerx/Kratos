@@ -4,7 +4,7 @@
         "plane_state":                    "Plane_Stress",
         "mesh_optimality_criteria":       "Global_Error_Equidistribution",
         "permissible_error":               0.09,
-        "refinement_frequency":            1.0,
+        "refinement_frequency":            1.5,
         "Mapping_Procedure":              "Closest_Point_Transfer",
         "gid_path":                       "D:\\Program Files (x86)\\GiD 13.1.8d\\gid.exe"
     },
@@ -61,7 +61,7 @@
             "mesh_id":         0,
             "model_part_name": "Solid_Displacement-auto-2",
             "variable_name":   "DISPLACEMENT",
-            "value":           [0.0,"-0.0001*t",0.0],
+            "value":           [0.0,"-0.00005*t",0.0],
             "interval":        [0.0,"End"]
         }
     }],

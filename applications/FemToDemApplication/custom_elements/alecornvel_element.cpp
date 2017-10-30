@@ -140,8 +140,18 @@ namespace Kratos
 			
 			if (damage_element >= 0.98)
 			{
-				this->Set(TO_ERASE, true);
+				//std::cout<<"id "<<this->Id()<<std::endl;
+				//KRATOS_WATCH(this->GetValue(DAMAGE_ELEMENT))
+				//this->Set(TO_ERASE, true);
+				//this->Set(ACTIVE, false);
+				this->Set(ACTIVE, false);
+				//std::cout<<"id "<<this->Id()<<std::endl;
+				//std::cout<<"active  "<<this->Is(ACTIVE)<<std::endl;
+				//KRATOS_WATCH(this->GetValue(DAMAGE_ELEMENT))
 			}
+
+			//std::cout<<"active  "<<this->Is(ACTIVE)<<std::endl;
+
 
 		this->ResetNonConvergedVars();
 		this->SetToZeroIteration();

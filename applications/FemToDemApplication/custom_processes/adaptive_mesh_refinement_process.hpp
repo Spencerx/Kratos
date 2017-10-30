@@ -12,9 +12,12 @@
 #include <cmath>
 
 #include "includes/model_part.h"
+#include "boost/smart_ptr.hpp"
 #include "processes/process.h"
 
 #include "fem_to_dem_application_variables.h"
+#include "includes/kratos_flags.h"
+#include "includes/define.h"
 //#include "fem_to_dem_application.cpp"
 
 namespace Kratos
@@ -473,6 +476,7 @@ protected:
         }
     
         Elem_it = 0;
+        
     
         if(mmesh_optimality_criteria == "Global_Error_Equidistribution")
         {
@@ -480,8 +484,30 @@ protected:
             {
                 pElementRefinementParameter[Elem_it] = pow(GlobalError/(mpermissible_error*GlobalStrainEnergy),1/m_coef)*
                                               pow(sqrt(mNElements)*ElementError[Elem_it]/GlobalError,1/q_coef);
+                
                                               
-                pNewElementDimension[Elem_it] = ElementDimension[Elem_it] / pElementRefinementParameter[Elem_it];
+
+
+                //std::cout << (*it)->Is(ACTIVE) << "   " << (*it)->Id() << std::endl;
+
+                double damage = (*it)->GetValue(DAMAGE_ELEMENT);
+                bool condition_is_active = true;
+                if ((*it)->IsDefined(ACTIVE))
+                {
+                    condition_is_active = (*it)->Is(ACTIVE);
+                }
+
+                if (condition_is_active)
+                {
+                    pNewElementDimension[Elem_it] =  ElementDimension[Elem_it] / pElementRefinementParameter[Elem_it];
+                }
+                else
+                {
+                    pNewElementDimension[Elem_it] = ElementDimension[Elem_it] / 4;
+                    //pNewElementDimension[Elem_it] = ElementDimension[Elem_it] / pElementRefinementParameter[Elem_it];
+					//pNewElementDimension[Elem_it] = 1.0;
+                }
+                    
                 Elem_it += 1;
             }
         }
