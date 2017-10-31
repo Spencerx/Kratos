@@ -278,7 +278,7 @@ class FEM_Solution(MainSolidFEM.Solution):
 		self.main_model_part.CloneTimeStep(self.time) 
 
 
-		print(" [STEP:",self.step," TIME:",self.time,"]")
+		print(" [STEP:",self.step," TIME:", self.time,"]")
 
 		#print("priemro")
 		#Wait()
@@ -373,6 +373,10 @@ class FEM_Solution(MainSolidFEM.Solution):
 					                                         self.time,
 					                                         self.current_id)
 
+				# save print parameters
+				printed_step_count = self.graphical_output.printed_step_count
+				step_count = self.graphical_output.step_count
+
 				#construct the new solver (main setting methods are located in the solver_module)
 				#self.ProjectParameters["solver_settings"].RemoveValue("damp_factor_m")
 				#self.ProjectParameters["solver_settings"].RemoveValue("dynamic_factor")
@@ -380,6 +384,10 @@ class FEM_Solution(MainSolidFEM.Solution):
 				#solver_module = __import__(self.ProjectParameters["solver_settings"]["solver_type"].GetString())
 				#self.solver   = solver_module.CreateSolver(self.main_model_part, self.ProjectParameters["solver_settings"])
 				self.InitializeAfterAMR()
+
+				# assign print parameters
+				self.graphical_output.printed_step_count = printed_step_count
+				self.graphical_output.step_count = step_count
 
 				# test
 				
@@ -400,6 +408,8 @@ class FEM_Solution(MainSolidFEM.Solution):
 		#print("computing model part",self.computing_model_part)
 		#print(" *********model part*******",self.main_model_part)
 		#print("tiempooo :", self.time)
+		#print(self.graphical_output.printed_step_count)
+		#print(self.graphical_output.step_count)
 		print("************************")
 		Wait()
 
@@ -526,8 +536,9 @@ class FEM_Solution(MainSolidFEM.Solution):
 		
 		# Initialize GiD  I/O (gid outputs, file_lists)
 		self.SetGraphicalOutput()
-		
+		#print("stepppp2 :", self.main_model_part.ProcessInfo[KratosMultiphysics.STEP])
 		self.GraphicalOutputExecuteInitialize()
+		#print("stepppp3 :", self.main_model_part.ProcessInfo[KratosMultiphysics.STEP])
 
 
 		#print(" ")

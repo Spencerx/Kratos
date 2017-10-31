@@ -632,41 +632,81 @@ protected:
                     Damage[j]    = Other->GetValue(DAMAGE_ELEMENT);
                     Threshold[j] = Other->GetValue(STRESS_THRESHOLD);
 
-                    // check if new GP is inside element
-                    bool GPIsInside = false;
-                    Element::GeometryType::CoordinatesArrayType GPNodeGlobalCoordinates; //= {X_me, Y_me};  //--> TODO
-                    Element::GeometryType::CoordinatesArrayType GPNodeLocalCoordinates;
+
                     //GPNodeLocalCoordinates[0] = X_me;
                     //GPNodeLocalCoordinates[1] = Y_me;
 
 
-
-
-                    GPNodeGlobalCoordinates = Me->GetGeometry()[0].Coordinates();
                     //KRATOS_WATCH(GPNodeGlobalCoordinates)
                     //GPNodeGlobalCoordinates = (X_me, Y_me, 0.0); not working
-                    GPNodeGlobalCoordinates[0] = X_me;
-                    GPNodeGlobalCoordinates[1] = Y_me;
-                    GPIsInside = Other->GetGeometry().IsInside(GPNodeGlobalCoordinates,GPNodeLocalCoordinates);
+
                     //KRATOS_WATCH(GPIsInside)
 
+                    std::string flag = "any_nodes_is_in";
 
                     // check
-                    bool condition_is_active = true;
-                    if ((Other)->IsDefined(ACTIVE))
+                    if (flag == "GP_is_in")
                     {
-                        condition_is_active = (Other)->Is(ACTIVE);
+                        // check if new GP is inside element
+                        bool GPIsInside = false;
+                        Element::GeometryType::CoordinatesArrayType GPNodeGlobalCoordinates; //= {X_me, Y_me};  //--> TODO
+                        Element::GeometryType::CoordinatesArrayType GPNodeLocalCoordinates;
+                        GPNodeGlobalCoordinates = Me->GetGeometry()[0].Coordinates();
+                        GPNodeGlobalCoordinates[0] = X_me;
+                        GPNodeGlobalCoordinates[1] = Y_me;
+                        GPIsInside = Other->GetGeometry().IsInside(GPNodeGlobalCoordinates,GPNodeLocalCoordinates);
+
+                        bool condition_is_active = true;
+                        if ((Other)->IsDefined(ACTIVE))
+                        {
+                            condition_is_active = (Other)->Is(ACTIVE);
+                        }
+    
+                        if (condition_is_active == false) // the inactive old elements have damage 0
+                        {
+                            Damage[j] = 0.97;
+                        }
+                        if (condition_is_active == false && GPIsInside == true)
+                        {
+                            Me->Set(ACTIVE, false);
+                        }
                     }
 
+                    else // "any_nodes_is_in"
+                    {
+                        Element::GeometryType::CoordinatesArrayType PointNodeGlobalCoordinates;
+                        Element::GeometryType::CoordinatesArrayType PointNodeLocalCoordinates;
+
+                        bool any_node_is_inside = false;
+                        bool condition_is_active = true;
+                        if ((Other)->IsDefined(ACTIVE))
+                        {
+                            condition_is_active = (Other)->Is(ACTIVE);
+                        }
+    
+                        
+                        if (condition_is_active == false) // the inactive old elements have damage 0
+                        {
+                            Damage[j] = 0.97;
+                        }
+                        // if (condition_is_active == false && GPIsInside == true)
+                        // {
+                        //     Me->Set(ACTIVE, false);
+                        // }
+
+                        for (int node = 0; node < 3; node++)
+                        {
+                            PointNodeGlobalCoordinates = Me->GetGeometry()[node].Coordinates();
+                            any_node_is_inside =  Other->GetGeometry().IsInside(PointNodeGlobalCoordinates,PointNodeLocalCoordinates);
+                            if (any_node_is_inside == true) break;
+                        }
+
+                        if (condition_is_active == false && any_node_is_inside == true)
+                        {
+                            Me->Set(ACTIVE, false);
+                        }
+                    }
                     
-                    if (condition_is_active == false) // the inactive old elements have damage 0
-                    {
-                        Damage[j] = 0.98;
-                    }
-                    if (condition_is_active == false && GPIsInside == true)
-                    {
-                        Me->Set(ACTIVE, false);
-                    }
 
 					//if (Other->Id() == 126)
 					//{

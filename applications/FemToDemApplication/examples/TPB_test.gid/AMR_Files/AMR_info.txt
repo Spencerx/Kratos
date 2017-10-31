@@ -1,0 +1,4 @@
+Mesh: 2
+Number of elements: 16983
+Global Refinement Parameter: -nan(ind)
+------------------------------------------------------------------

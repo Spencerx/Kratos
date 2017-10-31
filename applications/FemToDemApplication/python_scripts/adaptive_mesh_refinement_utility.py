@@ -282,6 +282,10 @@ class AdaptiveMeshRefinementUtility:
             # Add materials (assign material to model_parts if Materials.json exists)
             #self.AddMaterials(model_part)
 
+            #test
+            model_part.ProcessInfo.SetValue(STEP, step)
+            print("stepppp1 :", model_part.ProcessInfo[STEP])
+            Wait()
             # Add processes -> en main
             #self.model_processes = self.AddProcesses(model_part)
             #self.model_processes.ExecuteInitialize()
