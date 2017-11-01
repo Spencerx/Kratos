@@ -82,6 +82,7 @@ namespace Kratos
 			const ProcessInfo& rCurrentProcessInfo);
 
 		void Get2MaxValues(Vector& MaxValues, double a, double b, double c);
+		void Get2MinValues(Vector& MaxValues, double a, double b, double c);
 
 		void IntegrateStressDamageMechanics(Vector& rIntegratedStress, 
 			double& Damage, const Vector StrainVector, const Vector StressVector, int cont, double L_char);

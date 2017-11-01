@@ -240,12 +240,15 @@ protected:
 
         for(ElementsArrayType::ptr_iterator it = mr_model_part.Elements().ptr_begin(); it != mr_model_part.Elements().ptr_end(); ++it)
         {
+
+
+
             GaussPointsStresses = (*it)->GetValue(STRESS_VECTOR);
            // KRATOS_WATCH(GaussPointsStresses)
             //Triangles2D3N
             if((*it)->GetGeometry().PointsNumber() == 3)
             {
-                for(int i=0; i<3; i++)
+                for(int i=0; i < 3; i++)
                 {
                     pNodeStressesVector[(*it)->GetGeometry().GetPoint(i).Id()-1].EffectiveStressVector[0] += GaussPointsStresses[0];
                     pNodeStressesVector[(*it)->GetGeometry().GetPoint(i).Id()-1].EffectiveStressVector[1] += GaussPointsStresses[1];
@@ -278,6 +281,9 @@ protected:
         {
             pNodeStressesVector[i].EffectiveStressVector = pNodeStressesVector[i].EffectiveStressVector/pNodeStressesVector[i].NElems;
         }
+
+
+        
     }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -329,7 +335,7 @@ protected:
         GaussPointWeights[0] = GPWeight;
         GaussPointWeights[1] = GPWeight;
 
-        for(int i=0; i<4; i++)
+        for(int i=0; i < 4; i++)
         {
             InterpolationComponents = this->ShapeFunctions( (GPLocalCoordinates[i])[0] , (GPLocalCoordinates[i])[1] );
             Interpolation(i,0) = InterpolationComponents[0];
@@ -503,9 +509,9 @@ protected:
                 }
                 else
                 {
-                    pNewElementDimension[Elem_it] = ElementDimension[Elem_it] / 4;
+                    //pNewElementDimension[Elem_it] = ElementDimension[Elem_it]/4;
                     //pNewElementDimension[Elem_it] = ElementDimension[Elem_it] / pElementRefinementParameter[Elem_it];
-					//pNewElementDimension[Elem_it] = 1.0;
+					pNewElementDimension[Elem_it] = ElementDimension[Elem_it] / 10.0;
                 }
                     
                 Elem_it += 1;

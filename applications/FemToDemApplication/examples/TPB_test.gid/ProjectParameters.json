@@ -4,7 +4,7 @@
         "plane_state":                    "Plane_Stress",
         "mesh_optimality_criteria":       "Global_Error_Equidistribution",
         "permissible_error":               0.09,
-        "refinement_frequency":            2.0,
+        "refinement_frequency":            1.5,
         "Mapping_Procedure":              "Closest_Point_Transfer",
         "gid_path":                       "D:\\Program Files (x86)\\GiD 13.1.8d\\gid.exe"
     },
@@ -14,7 +14,7 @@
         "domain_size":          2,
         "start_time":           0.0,
         "end_time":             5.0,
-        "time_step":            0.2,
+        "time_step":            0.1,
         "echo_level":           1
     },
    "solver_settings": {

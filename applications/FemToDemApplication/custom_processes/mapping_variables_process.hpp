@@ -393,8 +393,8 @@ protected:
         //double RowSize = (Y_max - Y_min) / NRows;
         //double ColumnSize = (X_max - X_min) / NColumns;
 
-		int NRows    = int((Y_max - Y_min) / (2 * mAverageElementLength));
-		int NColumns = int((X_max - X_min) / (2 * mAverageElementLength));
+		int NRows    = int((Y_max - Y_min) / (10 * mAverageElementLength));
+		int NColumns = int((X_max - X_min) / (10 * mAverageElementLength));
 
 		double RowSize = (Y_max - Y_min) / NRows;
 		double ColumnSize = (X_max - X_min) / NColumns;
@@ -688,12 +688,9 @@ protected:
                         if (condition_is_active == false) // the inactive old elements have damage 0
                         {
                             Damage[j] = 0.97;
-                        }
-                        // if (condition_is_active == false && GPIsInside == true)
-                        // {
-                        //     Me->Set(ACTIVE, false);
-                        // }
+							Threshold[j] = 1000;
 
+                        }
                         for (int node = 0; node < 3; node++)
                         {
                             PointNodeGlobalCoordinates = Me->GetGeometry()[node].Coordinates();
@@ -732,16 +729,29 @@ protected:
                 }
 
 
-				 //if (Me->Id() == 7)
-				 //{
-				 //	KRATOS_WATCH(pGaussPointOldMatrix[0][0].GaussPointOldVector.size())
-                //                KRATOS_WATCH(GaussPointNewVector.size())
-				 //	KRATOS_WATCH(Distance[0])
-				 //	KRATOS_WATCH(Distance[1])
-				 //	KRATOS_WATCH(Distance[2])
-				 //	KRATOS_WATCH(*Damage)
-				 //	KRATOS_WATCH(*Threshold)
-				 //}
+				  if (Me->Id() == 143)
+				  {
+
+					KRATOS_WATCH(pGaussPointOldMatrix[Row][Column].GaussPointOldVector.size())
+						for (int cont = 0; cont < pGaussPointOldMatrix[Row][Column].GaussPointOldVector.size(); cont++)
+						{
+							std::cout << "Old elements id: " << pGaussPointOldMatrix[Row][Column].GaussPointOldVector[cont].pElement->Id() << std::endl;
+							std::cout << "threshold   "  << Threshold[cont] << std::endl;
+							std::cout << "damage   " << Damage[cont] << std::endl;
+						}
+					
+                     //KRATOS_WATCH(GaussPointNewVector.size())
+				  	KRATOS_WATCH(Distance[0])
+				  	KRATOS_WATCH(Distance[1])
+				  	KRATOS_WATCH(Distance[2])
+				  	KRATOS_WATCH(*Damage)
+				  	KRATOS_WATCH(Threshold[0])
+					KRATOS_WATCH(Threshold[3])
+					KRATOS_WATCH(Threshold[1])
+					KRATOS_WATCH(Threshold[2])
+				  }
+
+
 				MinDistance = Distance[0];
                 damage      = Damage[0];
                 threshold   = Threshold[0];
@@ -758,11 +768,10 @@ protected:
                     }
                 }
 
-				//KRATOS_WATCH(damage)
+				// Set GP values
                 Me->SetValue(DAMAGE_ELEMENT, damage);
                 Me->SetValue(STRESS_THRESHOLD, threshold);
 
-                //if (damage > 0.98){ Me->Set(ACTIVE, false); }
 
 
                 delete[] Distance;

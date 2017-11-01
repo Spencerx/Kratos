@@ -161,9 +161,9 @@ namespace Kratos
 		
 		//KRATOS_WATCH(thresholds[0])
 
-		Vector TwoMaxValues;
-		this->Get2MaxValues(TwoMaxValues, thresholds[0], thresholds[1], thresholds[2]);
-		double EqThreshold = 0.5*(TwoMaxValues[0] + TwoMaxValues[1]);  // El menor o mayor?? TODO
+		Vector TwoMinValues;
+		this->Get2MinValues(TwoMinValues, thresholds[0], thresholds[1], thresholds[2]);
+		double EqThreshold = 0.5*(TwoMinValues[0] + TwoMinValues[1]);  // El menor o mayor?? TODO
 
 		//KRATOS_WATCH(EqThreshold)
 
@@ -358,6 +358,14 @@ namespace Kratos
 				this->IntegrateStressDamageMechanics(IntegratedStressVector, damagee, AverageStrain, AverageStress, cont, l_char);
 				damage[cont] = damagee;
 				this->Set_NonConvergeddamages(damagee, cont);
+
+				//if (this->Id() == 466 && rCurrentProcessInfo[STEP] > 15)
+				//{
+				//	KRATOS_WATCH(damagee)
+				//	KRATOS_WATCH(l_char)
+				//	KRATOS_WATCH(l_char)
+
+				//}
 
 			} // Loop Over Edges
 
@@ -832,6 +840,29 @@ namespace Kratos
 		MaxValues[0] = V[2];
 		MaxValues[1] = V[1];
 	}
+
+	void AleCornVelElement::Get2MinValues(Vector& MaxValues, double a, double b, double c)
+	{
+		MaxValues.resize(2);
+		Vector V;
+		V.resize(3);
+		V[0] = a;
+		V[1] = b;
+		V[2] = c;
+		int n = 3, imin = 0;
+
+		for (int i = 0; i < n; i++) {
+			for (int j = 0; j < n - 1; j++) {
+				if (V[j] > V[j + 1]) {
+					double aux = V[j];
+					V[j] = V[j + 1];
+					V[j + 1] = aux;
+				}
+			}
+		}
+		MaxValues[0] = V[1];
+		MaxValues[1] = V[0];
+	}
 	double AleCornVelElement::Calculate_I1_Invariant(double sigma1, double sigma2) { return sigma1 + sigma2; }
 	double AleCornVelElement::Calculate_J2_Invariant(double sigma1, double sigma2)
 	{
@@ -919,7 +950,7 @@ namespace Kratos
 	{
 		KRATOS_TRY
 
-			const unsigned int number_of_nodes = GetGeometry().PointsNumber();
+		const unsigned int number_of_nodes = GetGeometry().PointsNumber();
 		const unsigned int dimension = GetGeometry().WorkingSpaceDimension();
 
 		if (rVolumeForce.size() != dimension)
