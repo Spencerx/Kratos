@@ -419,14 +419,14 @@ protected:
             X_me = GPGlobalCoord[0];
             Y_me = GPGlobalCoord[1];
 
-     //       if ((*it)->Id() == 126)
-     //       {
-     //           KRATOS_WATCH(X_me)
-     //           KRATOS_WATCH(Y_me)
-					//KRATOS_WATCH(GPGlobalCoord[0])
-					//KRATOS_WATCH(GPGlobalCoord[1])
-     //           KRATOS_WATCH(Y_me)
-     //       }
+            if ((*it)->Id() == 2)
+            {
+      			KRATOS_WATCH((*it)->GetValue(STRESS_THRESHOLD))
+                KRATOS_WATCH(Y_me)
+				KRATOS_WATCH(GPGlobalCoord[0])
+				KRATOS_WATCH(GPGlobalCoord[1])
+                KRATOS_WATCH(Y_me)
+            }
 
             Row    = int((Y_max - Y_me) / RowSize);
             Column = int((X_me - X_min) / ColumnSize);
@@ -729,8 +729,8 @@ protected:
                 }
 
 
-				  if (Me->Id() == 143)
-				  {
+				 if (Me->Id() == 143)
+				 {
 
 					KRATOS_WATCH(pGaussPointOldMatrix[Row][Column].GaussPointOldVector.size())
 						for (int cont = 0; cont < pGaussPointOldMatrix[Row][Column].GaussPointOldVector.size(); cont++)
@@ -740,16 +740,16 @@ protected:
 							std::cout << "damage   " << Damage[cont] << std::endl;
 						}
 					
-                     //KRATOS_WATCH(GaussPointNewVector.size())
-				  	KRATOS_WATCH(Distance[0])
-				  	KRATOS_WATCH(Distance[1])
-				  	KRATOS_WATCH(Distance[2])
-				  	KRATOS_WATCH(*Damage)
-				  	KRATOS_WATCH(Threshold[0])
+                    //KRATOS_WATCH(GaussPointNewVector.size())
+				 	KRATOS_WATCH(Distance[0])
+				 	KRATOS_WATCH(Distance[1])
+				 	KRATOS_WATCH(Distance[2])
+				 	KRATOS_WATCH(*Damage)
+				 	KRATOS_WATCH(Threshold[0])
 					KRATOS_WATCH(Threshold[3])
 					KRATOS_WATCH(Threshold[1])
 					KRATOS_WATCH(Threshold[2])
-				  }
+				 }
 
 
 				MinDistance = Distance[0];

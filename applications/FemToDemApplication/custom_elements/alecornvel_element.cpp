@@ -162,8 +162,15 @@ namespace Kratos
 		//KRATOS_WATCH(thresholds[0])
 
 		Vector TwoMinValues;
-		this->Get2MinValues(TwoMinValues, thresholds[0], thresholds[1], thresholds[2]);
+		this->Get2MaxValues(TwoMinValues, thresholds[0], thresholds[1], thresholds[2]);  // todo ojo con la funcion modificada
 		double EqThreshold = 0.5*(TwoMinValues[0] + TwoMinValues[1]);  // El menor o mayor?? TODO
+
+		if (this->Id() == 2 | this->Id() == 10)
+		{
+			KRATOS_WATCH(this->Id())
+			KRATOS_WATCH(EqThreshold)
+			KRATOS_WATCH(TwoMinValues)
+		}
 
 		//KRATOS_WATCH(EqThreshold)
 
@@ -329,24 +336,85 @@ namespace Kratos
 			if (elem_neigb.size() == 0) { KRATOS_THROW_ERROR(std::invalid_argument, " Neighbour Elements not calculated --> size = ", elem_neigb.size()) }
 
 
+
+			// check if one neighbour is inactive -> do not take into account
+			//WeakPointerVector< Element > Filtered_elem_neigb;
+			////Filtered_elem_neigb.resize(3);
+			//bool is_active_neigh = true;
+
+			//for (int neig = 0; neig < 3; neig++) 
+			//{
+			//	if (elem_neigb[neig].IsDefined(ACTIVE))
+			//	{
+			//		is_active_neigh = elem_neigb[neig].Is(ACTIVE);
+			//	}
+
+			//	if(is_active_neigh == false) 
+			//	{
+			//		//Filtered_elem_neigb[neig] = *this;
+			//		Filtered_elem_neigb.push_back(*this);
+			//	}
+			//	else 
+			//	{
+			//		//Filtered_elem_neigb[neig] = elem_neigb[neig];
+			//		Filtered_elem_neigb.push_back(elem_neigb[neig]);
+			//	}
+			//}
+			//***************************
+			
+
+
+
+
 			// Compute damage on each edge of the element
+			// check if one neighbour is inactive -> do not take into account
 			double damage[3] = { 0,0,0 };
+			//Element Filtered_elem_neigb;
 
 			// Loop Over Edges
 			for (int cont = 0; cont < 3; cont++)
 			{
+
+				bool is_active_neigh = true;
+				if (elem_neigb[cont].IsDefined(ACTIVE))
+				{
+					is_active_neigh = elem_neigb[cont].Is(ACTIVE);
+				}
+
+				//if(is_active_neigh == false) 
+				//{
+				//	//Filtered_elem_neigb[neig] = *this;
+				//	Filtered_elem_neigb = *this;
+				//}
+				//else 
+				//{
+				//	//Filtered_elem_neigb[neig] = elem_neigb[neig];
+				//	Filtered_elem_neigb = elem_neigb[cont];
+				//}
+
 				double damagee = 0.0;
-				Vector Stress1, Stress2, AverageStress;
-				Vector Strain1, Strain2, AverageStrain;
+				Vector  AverageStress;
+				Vector  AverageStrain;
 
-				Stress1 = this->GetValue(STRESS_VECTOR);
-				Stress2 = elem_neigb[cont].GetValue(STRESS_VECTOR);
+				if (is_active_neigh)
+				{
+					Vector Stress1, Stress2;
+					Vector Strain1, Strain2;
 
-				Strain1 = this->GetValue(STRAIN_VECTOR);
-				Strain2 = elem_neigb[cont].GetValue(STRAIN_VECTOR);
+					Stress1 = this->GetValue(STRESS_VECTOR);
+					Stress2 = elem_neigb[cont].GetValue(STRESS_VECTOR);
 
-				this->AverageVector(AverageStress, Stress1, Stress2);
-				this->AverageVector(AverageStrain, Strain1, Strain2);
+					Strain1 = this->GetValue(STRAIN_VECTOR);
+					Strain2 = elem_neigb[cont].GetValue(STRAIN_VECTOR);
+
+					this->AverageVector(AverageStress, Stress1, Stress2);
+					this->AverageVector(AverageStrain, Strain1, Strain2);
+				}
+				else 
+				{
+					AverageStress = this->GetValue(STRESS_VECTOR);
+					AverageStrain = this->GetValue(STRAIN_VECTOR);
+				}
 
 				if (this->GetIteration() < 3) // Computes the l_char on each side only once at each time step
 				{

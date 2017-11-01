@@ -1,5 +1,5 @@
 ################ Adaptive Mesh Refinement Info ################
 Mesh: 0
 Number of elements: 9356
-Global Refinement Parameter: 3.568
+Global Refinement Parameter: 3.56457
 ------------------------------------------------------------------
